@@ -8,6 +8,8 @@ a simple OS for 6502-based systems (currently C64 only)
 - relocatable program support (using custom .rel format)
 - many (27!) syscalls (some like unix, others custom)
 - a basic shell
+- page allocator
+- malloc and free
 - simple TTY driver
 
 ## compiling
