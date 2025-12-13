@@ -63,55 +63,29 @@ test_process:
     ;jsr getdir
     ldx #<dirinfo_src_dir
     ldy #>dirinfo_src_dir
-    jsr dirinfo
-    ; TODO: FOR NOW (with our RomFS solution)
+    jsr initdir
+
 ls_loop:
-    lda dirinfo_src_dir+0
-    ora dirinfo_src_dir+1
-    beq do_exit
+    ldx #<dirinfo_src_dir
+    ldy #>dirinfo_src_dir
+    jsr readdir
 
-    lda dirinfo_src_dir+4
-    sta ptr
-    lda dirinfo_src_dir+5
-    sta ptr+1
-
-    ldy #0
-    lda (ptr),y ; dir_ptr
-    clc
-    adc #3
-    sta ptr+2 
-    ldy #1
-    lda (ptr),y ; dir_ptr
-    adc #0
-    sta ptr+3 
+    lda dirinfo_src_dir+DIRENT_FLAGS
+    and #DIRENT_DONE
+    bne do_exit
 
     ldy #0
 :
-    lda (ptr+2), y
+    lda dirinfo_src_dir+128, y
     beq :+
     jsr_save putc
     iny
-    jmp :-    
+    cpy #128
+    bne :-    
 :
+
     lda #$0a
     jsr putc
-
-    lda dirinfo_src_dir+4 ; dir_ptr
-    clc
-    adc #2
-    sta dirinfo_src_dir+4 ; dir_ptr
-    lda dirinfo_src_dir+5 ; dir_ptr+1
-    adc #0
-    sta dirinfo_src_dir+5 ; dir_ptr+1
-
-    ; dec16 dirinfo_src_dir+0
-    lda dirinfo_src_dir+0
-    sec
-    sbc #2
-    sta dirinfo_src_dir+0
-    lda dirinfo_src_dir+1
-    sbc #0
-    sta dirinfo_src_dir+1
     jmp ls_loop
 do_exit:
     cli
@@ -120,8 +94,12 @@ do_exit:
 .byte $aa
 
 dirinfo_src_dir: 
-        ; len, name, dir_ptr
-    .word 0, 0, 0
+;        ; len, name, dir_ptr
+;    .word 0, 0, 0
+    .dword 0 ; dir_ptr
+    .byte 0 ; flags
+    .res 16-(4+1) ; padded to 16 bytes
+    .res 128 ; filename
 
 ;dir_test:
 ;    .byte "/", 0 

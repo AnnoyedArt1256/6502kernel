@@ -4,16 +4,37 @@ D_root:
     .word ED_root-BD_root
     .byte 0
 BD_root:
-    .word D___bin
-    .word D___dir2
-    .word D___dir1
-    .word F_test___prog
-    .word F_fork___bomb
-    .word F_flobber_sid
-    .word F_sid
-    .word F_shape_sid
-    .word F_test_sh
-    .word F_robocop3___title_sid
+    .dword D___bin
+    .dword (:+)|LINKED_FLAG
+:
+    .dword D___dir2
+    .dword (:+)|LINKED_FLAG
+:
+    .dword D___dir1
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F_test___prog
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F_fork___bomb
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F_flobber_sid
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F_sid
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F_shape_sid
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F_test_sh
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F_robocop3___title_sid
+    .dword (:+)|LINKED_FLAG
+:
+    .dword $ffffffff
 
 ED_root:
         
@@ -78,13 +99,28 @@ D___bin:
     .word ED___bin-BD___bin
     .byte "bin", 0
 BD___bin:
-    .word F___bin__cat
-    .word F___bin__echo
-    .word F___bin__pwd
-    .word F___bin__printnl
-    .word F___bin__clear
-    .word F___bin__sh
-    .word F___bin__ls
+    .dword F___bin__cat
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___bin__echo
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___bin__pwd
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___bin__printnl
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___bin__clear
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___bin__sh
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___bin__ls
+    .dword (:+)|LINKED_FLAG
+:
+    .dword $ffffffff
 
 ED___bin:
         
@@ -149,8 +185,13 @@ D___dir2:
     .word ED___dir2-BD___dir2
     .byte "dir2", 0
 BD___dir2:
-    .word F___dir2__test___another_sh
-    .word F___dir2__wao_bin
+    .dword F___dir2__test___another_sh
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___dir2__wao_bin
+    .dword (:+)|LINKED_FLAG
+:
+    .dword $ffffffff
 
 ED___dir2:
         
@@ -175,9 +216,16 @@ D___dir1:
     .word ED___dir1-BD___dir1
     .byte "dir1", 0
 BD___dir1:
-    .word D___dir1__sub___dir
-    .word F___dir1__test1_txt
-    .word F___dir1__test2_txt
+    .dword D___dir1__sub___dir
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___dir1__test1_txt
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___dir1__test2_txt
+    .dword (:+)|LINKED_FLAG
+:
+    .dword $ffffffff
 
 ED___dir1:
         
@@ -202,8 +250,13 @@ D___dir1__sub___dir:
     .word ED___dir1__sub___dir-BD___dir1__sub___dir
     .byte "sub-dir", 0
 BD___dir1__sub___dir:
-    .word D___dir1__sub___dir__fuck
-    .word F___dir1__sub___dir__test3_txt
+    .dword D___dir1__sub___dir__fuck
+    .dword (:+)|LINKED_FLAG
+:
+    .dword F___dir1__sub___dir__test3_txt
+    .dword (:+)|LINKED_FLAG
+:
+    .dword $ffffffff
 
 ED___dir1__sub___dir:
         
@@ -220,7 +273,10 @@ D___dir1__sub___dir__fuck:
     .word ED___dir1__sub___dir__fuck-BD___dir1__sub___dir__fuck
     .byte "fuck", 0
 BD___dir1__sub___dir__fuck:
-    .word F___dir1__sub___dir__fuck__blehg_bin
+    .dword F___dir1__sub___dir__fuck__blehg_bin
+    .dword (:+)|LINKED_FLAG
+:
+    .dword $ffffffff
 
 ED___dir1__sub___dir__fuck:
         

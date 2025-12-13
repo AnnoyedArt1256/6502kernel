@@ -523,24 +523,27 @@ LAB_exit_n_found:
 LAB_nextfile:
 	CLC					; clear carry for add
 	LDA	filesys_l			; get filesys low byte
-	ADC	#$02				; increment to next pointer
+	ADC	#$04				; increment to next pointer
 	STA	filesys_l			; save filesys low byte
 	BCC	ni_inc_h			; branch if no rollover
 
 	INC	filesys_h			; else increment filesys high byte
 ni_inc_h:
+
+/*
 	SEC					; set carry for subtract
 	LDA	lensys_l			; get remaining length low byte
-	SBC	#$02				; increment to next pointer
+	SBC	#$04				; increment to next pointer
 	STA	lensys_l			; save remaining length low byte
 	BCS	LAB_comparefile		; branch if no rollunder
 
 	DEC	lensys_h			; decerment remaining length high byte
+*/
 
 LAB_comparefile:
-	LDA	lensys_l			; get remaining directory length low byte
-	ORA	lensys_h			; OR remaining directory length high byte
-	BEQ	LAB_exit_n_found		; exit if no more directory entries
+	;LDA	lensys_l			; get remaining directory length low byte
+	;ORA	lensys_h			; OR remaining directory length high byte
+	;BEQ	LAB_exit_n_found		; exit if no more directory entries
 
 	LDY	#$00				; clear index
 	LDA	(filesys_l),Y		; get file pointer low byte
@@ -548,8 +551,25 @@ LAB_comparefile:
 	INY					; increment index
 	LDA	(filesys_l),Y		; get file pointer high byte
 	STA	file_h			; save this file pointer high byte
+	LDY #$03
+	LDA (filesys_l),Y
+	CMP #$80
+	BCC LAB_skip_linked
 
-	DEY					; clear index
+	LDA file_l
+	CMP #$ff
+	BNE LAB_skip_link_finish
+	CMP file_h
+	BNE LAB_skip_link_finish
+	JMP LAB_exit_n_found
+LAB_skip_link_finish:
+	LDA file_l
+	STA filesys_l
+	LDA file_h
+	STA filesys_h
+	jmp LAB_comparefile
+LAB_skip_linked:
+	LDY #$00					; clear index
 	LDA	(file_l),Y			; get this file's flags
 	STA	fileflags			; save the file's flag byte
 	INY					; point to payload length low byte
@@ -609,11 +629,16 @@ LAB_end_find:
 	STA	filesys_h			; save as file system pointer high byte
 
 	PLA					; restore next byte of name to find
-	BEQ	LAB_exit_found		; branch if end of name to find
+	;BEQ	LAB_exit_found		; branch if end of name to find
+	BNE :+
+	JMP LAB_exit_found
+:
 
 	BIT	fileflags			; else test the flags byte
-	BVC	LAB_exit_n_found		; branch if not a directory
-
+	; BVC	LAB_exit_n_found		; branch if not a directory
+	BVS	:+
+	JMP LAB_exit_n_found		; branch if not a directory
+:
 
 ; searches the directory pointed to by the file system pointer for the
 ; filename pointed to by the find name pointer. the routine is entered
@@ -631,7 +656,10 @@ LAB_directory:				; ok so far so update findname
 	STA	findname_h			; save findname high byte
 
 	LDA	(findname_l),Y		; get next byte of name to find
-	BNE	LAB_comparefile		; go compare file if not null filename
+	; BNE	LAB_comparefile		; go compare file if not null filename
+	BEQ	:+		; go compare file if not null filename
+	JMP LAB_comparefile
+:
 
 LAB_find_default:				; else get default file for this directory
 	;LDA	#<default_file		; get default filename pointer low byte

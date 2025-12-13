@@ -649,48 +649,206 @@ getdir:
     ldy #0
     rts
 
-dirinfo:
+initdir:
     php
     sei
     lda temp_ptr
-    sta dirinfo_temp_ptr
+    sta initdir_temp_ptr
     lda temp_ptr+1
-    sta dirinfo_temp_ptr+1
+    sta initdir_temp_ptr+1
 
     stx temp_ptr
     sty temp_ptr+1
 
+    lda #0
     ldy #0
-    lda lensys_l
+:
     sta (temp_ptr), y
     iny
-    lda lensys_h
-    sta (temp_ptr), y
-    iny
+    cpy #128
+    bne :-
 
+    ldy #0
+    ldx #0
+:
+    lda (file_l), y
+    inc file_l
+    bne :+
+    inc file_h
+:
+    inx
+    cmp #0
+    beq @skip_null_check
+    cpx #0
+    beq @skip_null_check
+    bne :--    
+@skip_null_check:
+
+    ldy #DIRENT_PTR
     lda file_l
     sta (temp_ptr), y
     iny
     lda file_h
     sta (temp_ptr), y
-    iny
+    ;iny
 
-    lda filesys_l
-    sta (temp_ptr), y
-    iny
-    lda filesys_h
-    sta (temp_ptr), y
-    iny
-
-    lda dirinfo_temp_ptr
+    lda initdir_temp_ptr
     sta temp_ptr
-    lda dirinfo_temp_ptr+1
+    lda initdir_temp_ptr+1
     sta temp_ptr+1
     plp
     rts
 
-dirinfo_temp_ptr:
+initdir_temp_ptr:
     .word 0
+
+
+; XY = dirent handler
+readdir:
+    php
+    sei
+    lda temp_ptr
+    sta readdir_temp_ptr
+    lda temp_ptr+1
+    sta readdir_temp_ptr+1
+    lda temp_ptr2
+    sta readdir_temp_ptr+2
+    lda temp_ptr2+1
+    sta readdir_temp_ptr+3
+    lda temp_ptr3
+    sta readdir_temp_ptr+4
+    lda temp_ptr3+1
+    sta readdir_temp_ptr+5
+
+    stx temp_ptr
+    sty temp_ptr+1
+
+@readdir_loop:
+
+    ldy #DIRENT_FLAGS
+    lda (temp_ptr), y
+    and #DIRENT_DONE
+    ;bne @end_readdir
+    beq :+
+    jmp @end_readdir
+:
+
+    ldy #DIRENT_PTR
+    lda (temp_ptr), y
+    sta temp_ptr2
+    iny
+    lda (temp_ptr), y
+    sta temp_ptr2+1
+
+    ldy #0
+    lda (temp_ptr2), y
+    sta readdir_temp_vars
+    ldy #1
+    lda (temp_ptr2), y
+    sta readdir_temp_vars+1
+    ldy #2
+    lda (temp_ptr2), y
+    sta readdir_temp_vars+2
+    ldy #3
+    lda (temp_ptr2), y
+    cmp #$80
+    bcc @skip_linked
+
+    ; check if the 32-bit linked ptr is $ffffffff
+    cmp #$ff
+    bne @skip_link_finish
+    cmp readdir_temp_vars+0
+    bne @skip_link_finish
+    cmp readdir_temp_vars+1
+    bne @skip_link_finish
+    cmp readdir_temp_vars+2
+    bne @skip_link_finish
+
+    ldy #DIRENT_FLAGS
+    lda (temp_ptr), y
+    ora #DIRENT_DONE
+    sta (temp_ptr), y
+ 
+    jmp @end_readdir
+@skip_link_finish:
+    ldy #DIRENT_PTR
+    lda readdir_temp_vars+0
+    sta (temp_ptr), y
+    iny
+    lda readdir_temp_vars+1
+    sta (temp_ptr), y
+    jmp @readdir_loop
+@skip_linked:
+
+    ldy #0
+    lda (temp_ptr), y
+    and #DIR_FLAG
+    beq :+
+    ldy #DIRENT_FLAGS
+    lda (temp_ptr), y
+    ora #DIRENT_ISDIR
+    sta (temp_ptr), y
+:
+
+    ; TODO: 32-bit ptrs
+    lda readdir_temp_vars
+    sec
+    sbc #128-3
+    sta temp_ptr3
+    lda readdir_temp_vars+1
+    sbc #0
+    sta temp_ptr3+1
+
+    ldy #128
+:
+    lda (temp_ptr3), y
+    sta (temp_ptr), y
+    beq :+
+    iny
+    cpy #$ff
+    bne :-
+:
+    lda #0
+    sta (temp_ptr3), y
+
+    ; TOOD: make this 32-bit
+    lda temp_ptr2
+    clc
+    adc #4
+    sta temp_ptr2
+    bcc :+
+    inc temp_ptr2+1
+:
+
+    ldy #DIRENT_PTR
+    lda temp_ptr2
+    sta (temp_ptr), y 
+    iny
+    lda temp_ptr2+1
+    sta (temp_ptr), y
+
+@end_readdir:
+    lda readdir_temp_ptr
+    sta temp_ptr
+    lda readdir_temp_ptr+1
+    sta temp_ptr+1
+    lda readdir_temp_ptr+2
+    sta temp_ptr2
+    lda readdir_temp_ptr+3
+    sta temp_ptr2+1
+    lda readdir_temp_ptr+4
+    sta temp_ptr3
+    lda readdir_temp_ptr+5
+    sta temp_ptr3+1
+    plp
+    rts
+
+readdir_temp_vars:
+    .byte 0, 0, 0, 0
+    .byte 0, 0
+
+readdir_temp_ptr:
+    .word 0, 0, 0
 
 ; returns: XY = dir str ptr
 get_curdir:
@@ -923,7 +1081,7 @@ all_calls:
     .word fgetc
     .word exec
     .word getdir
-    .word dirinfo
+    .word initdir
     .word getch
     .word getch_poll
     .word get_curdir
@@ -939,6 +1097,7 @@ all_calls:
     .word clearnmi
     .word malloc_range
     .word exit_nmi
+    .word readdir
 all_calls_end:
 
 name_temp_addrs_lo:
@@ -966,6 +1125,7 @@ name_temp:
 
 align 256
 DIR_FLAG = $40
+LINKED_FLAG = 1<<31
 romfs_image:
 .include "files.inc"
 

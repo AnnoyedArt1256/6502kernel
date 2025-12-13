@@ -1,35 +1,7 @@
-def read_file(filename): return list(open(filename,"rb").read())
-"""
-
-files = [ "/",
-    ("test", read_file("test_prog.rel")),
-    [ "dir1",
-      ["sub_dir", 
-        ["fuck", 
-           ("blehg.bin", "empty.bin")
-        ], 
-        ("test3.txt", "empty.bin")
-      ],
-      ("test1.txt", "empty.bin"),
-      ("test2.txt", "empty.bin"),
-    ],
-    [ "dir2",
-      ("wao.bin", "empty.bin"),
-    ]
-]
-
-def traverse(l,x=[]):
-    if not l: return
-    for i in l[1:]:
-        print("dir: " if type(i) == list else "file:", x+[l[0]]+[i[0]])
-        if type(i) == list:
-            traverse(i,x+[l[0]])
-
-traverse(files)
-"""
-
 import os
 from pathlib import Path
+
+def read_file(filename): return list(open(filename,"rb").read())
 
 text = ""
 
@@ -39,10 +11,12 @@ for root, dirs, files in os.walk(filedir):
     if root == filedir:
         root_contents = ""
         for i in dirs:
-            root_contents += f"    .word D___{i.replace(".","_").replace("-","___")}\n"
+            root_contents += f"    .dword D___{i.replace(".","_").replace("-","___")}\n"
+            root_contents += f"    .dword (:+)|LINKED_FLAG\n:\n"
         for i in files:
-            root_contents += f"    .word F_{i.replace(".","_").replace("-","___")}\n"
-
+            root_contents += f"    .dword F_{i.replace(".","_").replace("-","___")}\n"
+            root_contents += f"    .dword (:+)|LINKED_FLAG\n:\n"
+        root_contents += f"    .dword $ffffffff\n"
         text += f"""
 D_root:
     .byte DIR_FLAG
@@ -71,11 +45,14 @@ E{name}:
         for i in dirs:
             j = "D_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
-            contents += f"    .word {j}\n"
+            contents += f"    .dword {j}\n"
+            contents += f"    .dword (:+)|LINKED_FLAG\n:\n"
         for i in files:
             j = "F_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
-            contents += f"    .word {j}\n"
+            contents += f"    .dword {j}\n"
+            contents += f"    .dword (:+)|LINKED_FLAG\n:\n"
+        contents += f"    .dword $ffffffff\n"
         name = "D_"+root_name
         name = name.replace("/","__").replace("-","___")
         text += f"""
