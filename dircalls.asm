@@ -357,7 +357,9 @@ mkdir:
     ldy #I ; header fs off
     lda (temp_ptr2), y
     sta mkdir_write_header_off+I
-    clc
+    .if I = 0
+        clc
+    .endif
     ldy #I+4 ; header fs len
     adc (temp_ptr2), y
     sta mkdir_write_struct+WRITE_VAL+I
