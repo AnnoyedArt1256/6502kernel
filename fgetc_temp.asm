@@ -1,3 +1,46 @@
+; for implementing an FS on disk/tape/serial/whatever
+; i'll have to ditch the ramdisk and read from an external device
+; to do that, i'll have to edit these routines:
+; - fgetc
+; - get_fs_header
+; - the LAB_xxxxx functions
+; in order to read from I/O instead of memory!!!
+
+; XY = returns ptr to fs header
+; NOTE: MAKE SURE TO FREE AFTER USING IT!!!!
+get_fs_header:
+    lda temp_ptr2
+    sta @temp_ptr
+    lda temp_ptr2+1
+    sta @temp_ptr+1
+
+	ldx #0
+	ldy #1
+	jsr malloc
+	sta temp_ptr2+1
+	lda #0
+	sta temp_ptr2
+
+	; todo: make this more portable
+	ldy #7
+:
+	lda FS_header, y
+	sta (temp_ptr2), y
+	dey
+	bpl :-
+
+	ldx temp_ptr2
+	ldy temp_ptr2+1
+
+	lda @temp_ptr
+	sta temp_ptr2
+	lda @temp_ptr+1
+	sta temp_ptr2+1
+	lda #0
+	rts
+
+@temp_ptr: .word 0
+
 ; YX = file handler
 fgetc:
     lda temp_ptr2

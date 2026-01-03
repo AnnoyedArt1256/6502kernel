@@ -18,6 +18,12 @@ for root, dirs, files in os.walk(filedir):
             root_contents += f"    .dword (:+)|LINKED_FLAG\n:\n"
         root_contents += f"    .dword $ffffffff\n"
         text += f"""
+FS_header:
+    .dword FS_end-FS_begin
+    .dword FS_begin
+
+FS_begin:
+
 D_root:
     .byte DIR_FLAG
     .word ED_root-BD_root
@@ -77,6 +83,11 @@ B{name}:
     .incbin \"{filename}\"
 E{name}:
             """
+
+text += f"""
+
+FS_end:
+"""
 
 f = open("files.inc","w")
 f.write(text)

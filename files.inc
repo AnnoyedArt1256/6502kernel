@@ -1,4 +1,10 @@
 
+FS_header:
+    .dword FS_end-FS_begin
+    .dword FS_begin
+
+FS_begin:
+
 D_root:
     .byte DIR_FLAG
     .word ED_root-BD_root
@@ -117,6 +123,9 @@ BD___bin:
     .dword F___bin__sh
     .dword (:+)|LINKED_FLAG
 :
+    .dword F___bin__mkdir
+    .dword (:+)|LINKED_FLAG
+:
     .dword F___bin__ls
     .dword (:+)|LINKED_FLAG
 :
@@ -171,6 +180,14 @@ F___bin__sh:
 BF___bin__sh:
     .incbin "./disk/bin/sh"
 EF___bin__sh:
+            
+F___bin__mkdir:
+    .byte 0
+    .word EF___bin__mkdir-BF___bin__mkdir
+    .byte "mkdir", 0
+BF___bin__mkdir:
+    .incbin "./disk/bin/mkdir"
+EF___bin__mkdir:
             
 F___bin__ls:
     .byte 0
@@ -288,3 +305,5 @@ BF___dir1__sub___dir__fuck__blehg_bin:
     .incbin "./disk/dir1/sub-dir/fuck/blehg.bin"
 EF___dir1__sub___dir__fuck__blehg_bin:
             
+
+FS_end:
