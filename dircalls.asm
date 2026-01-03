@@ -35,21 +35,15 @@ initdir:
     cpy #128
     bne :-
 
-    ldy #0
-    ldx #0
-:
-    lda (file_l), y
-    inc file_l
-    bne :+
+    ; skip 64-char name
+    lda file_l
+    clc
+    adc #64
+    sta file_l
+    bcc :+
     inc file_h
-:
-    inx
-    cmp #0
-    beq @skip_null_check
-    cpx #0
-    beq @skip_null_check
-    bne :--    
-@skip_null_check:
+: 
+;@skip_null_check:
 
     ldy #DIRENT_PTR
     lda file_l
@@ -172,7 +166,7 @@ readdir:
     sta (temp_ptr), y
     beq :+
     iny
-    cpy #$ff
+    cpy #128+64
     bne :-
 :
     lda #0
@@ -216,6 +210,15 @@ readdir_temp_vars:
 
 readdir_temp_ptr:
     .word 0, 0, 0
+
+; this is the magnum opus of shit code
+; do not read if you DO NOT want to wish to kill yourself after reading this code
+; this code made me rethink my entire life choices
+; "why am i doing shit in 6502 asm?"
+; "i should have done an OS in risc-v and called it a day"
+; "why am i doing THIS BULLSHIT for a school project?"
+; "i should have just continued programming in Scratch for fucks sake"
+; AGAIN, DO NOT READ THIS CODE UNLESS YOU WANT TO HAVE A BRAIN ANEURYSM
 
 ; XY = string pointer
 ; returns:
@@ -280,6 +283,7 @@ mkdir:
 
     ; 2. cut off string until there's only the parent dir
     txa
+    sta mkdir_filename_offset
     tay
 @remove_dircomb:
     lda (temp_ptr2), y
@@ -291,14 +295,9 @@ mkdir:
 @skip_rem_dircomb:
 
     ; check if the parent dir exists
+    ldx temp_ptr2
+    ldy temp_ptr2+1
     jsr getdir
-    cmp #0
-    bne :+
-    ; if it already exists, then fail
-    lda @free_a2+1
-    jsr free
-    jmp @fail
-:
 
 @free_a2:
     lda #0
@@ -325,10 +324,7 @@ mkdir:
     ldy #DIRENT_FLAGS
     lda (temp_ptr2), y
     and #DIRENT_DONE ; if done?
-    bne @do_exit
-
-    jmp @check_end_loop
-@do_exit:
+    beq @check_end_loop
 
     ldy #DIRENT_PTR
     lda (temp_ptr2), y
@@ -360,10 +356,12 @@ mkdir:
     .repeat 4, I
     ldy #I ; header fs off
     lda (temp_ptr2), y
+    sta mkdir_write_header_off+I
     clc
     ldy #I+4 ; header fs len
     adc (temp_ptr2), y
-    sta mkdir_write_struct+WRITE_VAL
+    sta mkdir_write_struct+WRITE_VAL+I
+    sta mkdir_write_addr+I
     .endrepeat
 
     lda temp_ptr2+1
@@ -377,8 +375,139 @@ mkdir:
 
     ldx #<mkdir_write_struct
     ldy #>mkdir_write_struct
-    ;jsr write_internal
+    jsr write_internal
+    
+    ; add the end element value ($ffffffff)
 
+    lda #4
+    jsr mkdir_add_addr ; WTF?
+
+    lda mkdir_write_struct+WRITE_PTR+0
+    sta mkdir_last_item_off+0
+    lda mkdir_write_struct+WRITE_PTR+1
+    sta mkdir_last_item_off+1
+    lda mkdir_write_struct+WRITE_PTR+2
+    sta mkdir_last_item_off+2
+    lda mkdir_write_struct+WRITE_PTR+3
+    sta mkdir_last_item_off+3
+
+    lda #$ff
+    sta mkdir_write_struct+WRITE_VAL+0
+    sta mkdir_write_struct+WRITE_VAL+1
+    sta mkdir_write_struct+WRITE_VAL+2
+    sta mkdir_write_struct+WRITE_VAL+3
+
+    ldx #<mkdir_write_struct
+    ldy #>mkdir_write_struct
+    jsr write_internal
+    
+    .repeat 4, I
+        lda mkdir_write_addr+I
+        sta mkdir_write_struct+WRITE_PTR+I
+    .endrepeat
+
+    lda #$40 ; DIR_FLAG
+    sta mkdir_write_struct+WRITE_VAL+0
+    lda #0
+    sta mkdir_write_struct+WRITE_VAL+1
+    sta mkdir_write_struct+WRITE_VAL+2
+
+    lda #3
+    sta mkdir_write_struct+WRITE_LEN+0
+
+    ldx #<mkdir_write_struct
+    ldy #>mkdir_write_struct
+    jsr write_internal
+
+    lda #3-1
+    jsr mkdir_add_addr
+
+    ldx #0
+    ldy mkdir_filename_offset
+    iny
+@write_name:
+    lda (temp_ptr), y
+    beq @skip_write_name
+
+    jsr_save write_byte_mkdir
+
+    iny
+    inx
+    cpx #64
+    bne @write_name
+@skip_write_name:
+    dex
+@write_blank:
+    lda #0
+    jsr_save write_byte_mkdir
+    inx
+    cpx #64
+    bne @write_blank
+
+    jsr write_end_marker ; for the newly created directory
+    lda mkdir_write_struct+WRITE_PTR+0
+    sta mkdir_off_temp+0
+    lda mkdir_write_struct+WRITE_PTR+1
+    sta mkdir_off_temp+1
+    lda mkdir_write_struct+WRITE_PTR+2
+    sta mkdir_off_temp+2
+    lda mkdir_write_struct+WRITE_PTR+3
+    sta mkdir_off_temp+3
+    jsr write_end_marker ; for the parent directory's linked list
+
+    ; update the fs length dword
+    lda mkdir_write_struct+WRITE_PTR+0
+    sec
+    sbc mkdir_write_header_off+0
+    sta mkdir_write_struct+WRITE_VAL+0
+    lda mkdir_write_struct+WRITE_PTR+1
+    sbc mkdir_write_header_off+1
+    sta mkdir_write_struct+WRITE_VAL+1
+    lda mkdir_write_struct+WRITE_PTR+2
+    sbc mkdir_write_header_off+2
+    sta mkdir_write_struct+WRITE_VAL+2
+    lda mkdir_write_struct+WRITE_PTR+3
+    sbc mkdir_write_header_off+3
+    sta mkdir_write_struct+WRITE_VAL+3
+
+    ; TODO: make it more portable
+    lda #4
+    sta mkdir_write_struct+WRITE_LEN+0
+    lda #<(FS_header+4)
+    sta mkdir_write_struct+WRITE_PTR+0
+    lda #>(FS_header+4)
+    sta mkdir_write_struct+WRITE_PTR+1
+    lda #0
+    sta mkdir_write_struct+WRITE_PTR+2
+    sta mkdir_write_struct+WRITE_PTR+3
+
+    ldx #<mkdir_write_struct
+    ldy #>mkdir_write_struct
+    jsr write_internal
+
+    ; finally, write the parent directory's last index (i am so fucking tired)
+    lda mkdir_last_item_off+0
+    sta mkdir_write_struct+WRITE_PTR+0
+    lda mkdir_last_item_off+1
+    sta mkdir_write_struct+WRITE_PTR+1
+    lda mkdir_last_item_off+2
+    sta mkdir_write_struct+WRITE_PTR+2
+    lda mkdir_last_item_off+3
+    sta mkdir_write_struct+WRITE_PTR+3
+
+    lda mkdir_off_temp+0
+    sta mkdir_write_struct+WRITE_VAL+0
+    lda mkdir_off_temp+1
+    sta mkdir_write_struct+WRITE_VAL+1
+    lda mkdir_off_temp+2
+    sta mkdir_write_struct+WRITE_VAL+2
+    lda mkdir_off_temp+3
+    ora #$80
+    sta mkdir_write_struct+WRITE_VAL+3
+
+    ldx #<mkdir_write_struct
+    ldy #>mkdir_write_struct
+    jsr write_internal 
 
 @free_a:
     lda #0
@@ -417,8 +546,79 @@ mkdir_write_struct:
     .dword 0 ; val/buffer ptr
     .dword 0 ; len
     .byte 0 ; flag
-mkdir_write_buffer:
-    .dword 0, 0
+mkdir_write_addr: .dword 0
+mkdir_write_header_off: .dword 0
+mkdir_filename_offset: .byte 0
+mkdir_last_item_off: .dword 0
+mkdir_off_temp: .dword 0
+
+write_byte_mkdir:
+    sta mkdir_write_struct+WRITE_VAL
+
+    inc mkdir_write_struct+WRITE_PTR+0
+    bne :+
+    inc mkdir_write_struct+WRITE_PTR+1
+    bne :+
+    inc mkdir_write_struct+WRITE_PTR+2
+    bne :+
+    inc mkdir_write_struct+WRITE_PTR+3
+    bne :+
+:
+
+    lda #1
+    sta mkdir_write_struct+WRITE_LEN+0
+
+    ldx #<mkdir_write_struct
+    ldy #>mkdir_write_struct
+    jmp write_internal
+
+mkdir_add_addr:
+    clc
+    adc mkdir_write_struct+WRITE_PTR+0
+    sta mkdir_write_struct+WRITE_PTR+0
+    lda mkdir_write_struct+WRITE_PTR+1
+    adc #0
+    sta mkdir_write_struct+WRITE_PTR+1
+    lda mkdir_write_struct+WRITE_PTR+2
+    adc #0
+    sta mkdir_write_struct+WRITE_PTR+2
+    lda mkdir_write_struct+WRITE_PTR+3
+    adc #0
+    sta mkdir_write_struct+WRITE_PTR+3
+    rts
+
+write_end_marker:
+    ; write end marker and extra element (for when the directory gets added w/ files)
+    lda #$ff
+    sta mkdir_write_struct+WRITE_VAL+0
+    sta mkdir_write_struct+WRITE_VAL+1
+    sta mkdir_write_struct+WRITE_VAL+2
+    sta mkdir_write_struct+WRITE_VAL+3
+    lda #4
+    sta mkdir_write_struct+WRITE_LEN+0
+    lda #0
+    sta mkdir_write_struct+WRITE_FLAG
+
+    ldx #<mkdir_write_struct
+    ldy #>mkdir_write_struct
+    jsr write_internal
+    
+    ; this whole syscall is so unoptimized i fucking hate it
+    lda #4
+    jsr mkdir_add_addr
+
+    lda #0
+    sta mkdir_write_struct+WRITE_VAL+0
+    sta mkdir_write_struct+WRITE_VAL+1
+    sta mkdir_write_struct+WRITE_VAL+2
+    sta mkdir_write_struct+WRITE_VAL+3
+
+    ldx #<mkdir_write_struct
+    ldy #>mkdir_write_struct
+    jsr write_internal
+
+    lda #4
+    jmp mkdir_add_addr
 
 ; returns: XY = dir str ptr
 get_curdir:

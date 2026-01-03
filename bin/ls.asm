@@ -18,7 +18,31 @@ args: .res 2
 .include "../kernel.inc"
 .include "../kernel_calls.inc"
 
-test_process:
+.macro puts addr
+    .local @loop, @loop_skip
+    ldx #0
+@loop:
+    lda addr, x
+    beq @loop_skip
+    jsr_save putc
+    inx
+    bne @loop
+@loop_skip:
+.endmacro
+
+.macro puts_indy addr
+    .local @loop, @loop_skip
+    ldy #0
+@loop:
+    lda (addr), y
+    beq @loop_skip
+    jsr_save putc
+    iny
+    bne @loop
+@loop_skip:
+.endmacro
+
+ls_process:
     sei
     stx args
     sty args+1
@@ -51,11 +75,21 @@ test_process:
     ldx #0
     tay
     jsr getdir
+    cmp #0
+    beq :+
+    pla
+    jsr free
+    jmp ls_fail
+:
     pla
     jsr free
     jmp @skip_arg2
 @skip_arg:
     jsr getdir
+    cmp #0
+    beq :+
+    jmp ls_fail
+:
 @skip_arg2:
 
     ;ldx #<dir_test
@@ -91,7 +125,13 @@ do_exit:
     cli
     jsr exit
 
-.byte $aa
+ls_fail:
+    puts file_not_found_err
+    puts_indy args
+    lda #$0a
+    jsr putc
+    cli
+    jsr exit
 
 dirinfo_src_dir: 
 ;        ; len, name, dir_ptr
@@ -99,7 +139,7 @@ dirinfo_src_dir:
     .dword 0 ; dir_ptr
     .byte 0 ; flags
     .res 16-(4+1) ; padded to 16 bytes
-    .res 128 ; filename
+    .res 128 ; filename 
 
-;dir_test:
-;    .byte "/", 0 
+file_not_found_err:
+    .byte "ls: no such file or directory: ",0

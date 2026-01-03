@@ -16,7 +16,7 @@ for root, dirs, files in os.walk(filedir):
         for i in files:
             root_contents += f"    .dword F_{i.replace(".","_").replace("-","___")}\n"
             root_contents += f"    .dword (:+)|LINKED_FLAG\n:\n"
-        root_contents += f"    .dword $ffffffff\n"
+        root_contents += f"    .dword $ffffffff, 0\n"
         text += f"""
 FS_header:
     .dword FS_end-FS_begin
@@ -26,8 +26,8 @@ FS_begin:
 
 D_root:
     .byte DIR_FLAG
-    .word ED_root-BD_root
-    .byte 0
+    .word 0
+    .res 64, 0
 BD_root:
 {root_contents}
 ED_root:
@@ -39,7 +39,8 @@ ED_root:
 {name}:
     .byte 0
     .word E{name}-B{name}
-    .byte \"{i}\", 0
+    .byte \"{i}\"
+    .res 64-{len(i)}, 0
 B{name}:
     .incbin \"{filename}\"
 E{name}:
@@ -58,14 +59,15 @@ E{name}:
             j = j.replace("/","__").replace("-","___")
             contents += f"    .dword {j}\n"
             contents += f"    .dword (:+)|LINKED_FLAG\n:\n"
-        contents += f"    .dword $ffffffff\n"
+        contents += f"    .dword $ffffffff, 0\n"
         name = "D_"+root_name
         name = name.replace("/","__").replace("-","___")
         text += f"""
 {name}:
     .byte DIR_FLAG
-    .word E{name}-B{name}
-    .byte \"{Path(root_name).stem}\", 0
+    .word 0
+    .byte \"{Path(root_name).stem}\"
+    .res 64-{len(Path(root_name).stem)}, 0
 B{name}:
 {contents}
 E{name}:
@@ -78,7 +80,8 @@ E{name}:
 {name}:
     .byte 0
     .word E{name}-B{name}
-    .byte \"{i}\", 0
+    .byte \"{i}\"
+    .res 64-{len(i)}, 0
 B{name}:
     .incbin \"{filename}\"
 E{name}:
