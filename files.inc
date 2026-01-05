@@ -8,8 +8,12 @@
 .endmacro
 
 .macro GET_CUR_CLUSTER_ADD off
-    .word ((*-FS_begin)>>6)+off
+    off_cluster .set ((*-FS_begin)>>6)+off
+    .word off_cluster
     cur_cluster .set (*-FS_begin)>>6
+    .ifndef .ident(.sprintf("FS_cluser_%d",cur_cluster)) 
+        .ident(.sprintf("FS_cluser_%d",cur_cluster)) .set off_cluster
+    .endif
 .endmacro
 
 .macro WRITE_CLUSTER
@@ -21,7 +25,8 @@
 .macro write_dword value
     ; write_dword while writing the FAT over cluster boundaries
     prev_cur_cluster .set (*-FS_begin)>>6
-    .dword value
+    prev_cur_cluster_lsb .set (*-FS_begin)&$3f
+        .dword value
     cur_cluster .set (*-FS_begin)>>6
     .if cur_cluster <> prev_cur_cluster
         .ident(.sprintf("FS_cluser_%d",prev_cur_cluster)) .set cur_cluster
@@ -52,6 +57,12 @@ file_end:
     .endif
 .endmacro
 
+.macro pad_end v
+    cur_cluster .set (*-FS_begin)>>6
+    .ident(.sprintf("FS_cluser_%d",cur_cluster)) .set $fffe
+    pad 64
+.endmacro
+
 FS_header:
     .dword FS_end-FS_begin
     .dword FS_begin-FS_header
@@ -73,6 +84,7 @@ BD_root:
     write_dword D___bin-FS_header
     write_dword D___dir2-FS_header
     write_dword D___dir1-FS_header
+    write_dword D___test___fat-FS_header
     write_dword F_test___prog-FS_header
     write_dword F_fork___bomb-FS_header
     write_dword F_flobber_sid-FS_header
@@ -81,7 +93,7 @@ BD_root:
     write_dword F_test_sh-FS_header
     write_dword F_robocop3___title_sid-FS_header
     write_dword $ffffffff
-    pad 64
+    pad_end 64
 
 ED_root:
         
@@ -187,7 +199,7 @@ BD___bin:
     write_dword F___bin__mkdir-FS_header
     write_dword F___bin__ls-FS_header
     write_dword $ffffffff
-    pad 64
+    pad_end 64
 
 ED___bin:
         
@@ -299,7 +311,7 @@ BD___dir2:
     write_dword F___dir2__test___another_sh-FS_header
     write_dword F___dir2__wao_bin-FS_header
     write_dword $ffffffff
-    pad 64
+    pad_end 64
 
 ED___dir2:
         
@@ -340,7 +352,7 @@ BD___dir1:
     write_dword F___dir1__test1_txt-FS_header
     write_dword F___dir1__test2_txt-FS_header
     write_dword $ffffffff
-    pad 64
+    pad_end 64
 
 ED___dir1:
         
@@ -380,7 +392,7 @@ BD___dir1__sub___dir:
     write_dword D___dir1__sub___dir__fuck-FS_header
     write_dword F___dir1__sub___dir__test3_txt-FS_header
     write_dword $ffffffff
-    pad 64
+    pad_end 64
 
 ED___dir1__sub___dir:
         
@@ -407,7 +419,7 @@ D___dir1__sub___dir__fuck:
 BD___dir1__sub___dir__fuck:
     write_dword F___dir1__sub___dir__fuck__blehg_bin-FS_header
     write_dword $ffffffff
-    pad 64
+    pad_end 64
 
 ED___dir1__sub___dir__fuck:
         
@@ -423,6 +435,20 @@ BF___dir1__sub___dir__fuck__blehg_bin:
     CUSTOM_INCBIN "./disk/dir1/sub-dir/fuck/blehg.bin"
 EF___dir1__sub___dir__fuck__blehg_bin:
             
+D___test___fat:
+    .byte DIR_FLAG
+    .word 0
+    .byte "test-fat"
+    .res 48-8, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat:
+        
 
 FS_end:
     .repeat 512, I

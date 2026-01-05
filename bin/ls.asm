@@ -138,8 +138,9 @@ dirinfo_src_dir:
 ;    .word 0, 0, 0
     .dword 0 ; dir_ptr
     .byte 0 ; flags
-    .res 16-(4+1) ; padded to 16 bytes
-    .res 128 ; filename 
+    .word 0 ; cluster size
+    .res 16-(4+1+2) ; padded to 16 bytes
+    .res 48 ; filename 
 
 file_not_found_err:
     .byte "ls: no such file or directory: ",0

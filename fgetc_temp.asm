@@ -145,7 +145,7 @@ fgetc:
 	sec
 	sbc #1
 	sta (temp_ptr2), y
-	iny
+	ldy #1
     lda (temp_ptr2), y
 	sbc #0
 	sta (temp_ptr2), y
@@ -156,18 +156,25 @@ fgetc:
 	clc
 	adc #1
 	sta (temp_ptr2), y
-	iny
+	ldy #3
 	lda (temp_ptr2), y
 	sta temp_ptr3+1
 	adc #0
 	sta (temp_ptr2), y
+
+	dey ; ldy #2
+	lda (temp_ptr2), y
+	and #$3f
+	bne @end_next_fat
+	jmp @do_next_fat
+@end_next_fat:
 	
 	ldy #6
 	lda (temp_ptr2), y
 	clc
 	adc #1
 	sta (temp_ptr2), y
-	iny
+	ldy #7
 	lda (temp_ptr2), y
 	adc #0
 	sta (temp_ptr2), y
@@ -190,6 +197,56 @@ fgetc:
 @final_byte:
     lda #0
     rts
+
+@do_next_fat:
+    ; ABCDEFGHIJKLMNOP
+    ; GHIJKLMNOP000000
+    ldy #8
+    lda (temp_ptr2), y
+    iny
+    clc
+    adc #8>>1
+    sta filesys_l
+    lda (temp_ptr2), y
+    adc #0
+    sta filesys_h
+
+    asl filesys_l
+    rol filesys_h
+
+    ldx #<filesys_l
+    jsr read_internal
+    ldy #8
+    sta (temp_ptr2), y
+
+    inc filesys_l
+
+    ldx #<filesys_l
+    jsr read_internal
+    ldy #8+1 ; 9
+    sta (temp_ptr2), y
+    sta filesys_h
+    dey
+    lda (temp_ptr2), y
+    sta filesys_l
+
+    ; thanks llvm-mos :szok:
+    lsr filesys_h
+    ror filesys_l
+    lda #0
+    ror
+    lsr filesys_h
+    ror filesys_l
+    ror
+    clc
+    adc fs_start_off
+    ldy #2
+    sta (temp_ptr2), y
+    lda filesys_l
+    adc fs_start_off+1
+    iny
+    sta (temp_ptr2), y
+	jmp @end_next_fat
 
 ; XY = file handler
 ; returns: XY = file seek_pos
@@ -488,8 +545,9 @@ fopen:
     ; .word len
     ; .word ptr
     ; .word start_ptr
-    ; .word current_cluster
-    ldx #8
+    ; .word current_pos
+	; .word current_cluster
+    ldx #10
     ldy #0
     jsr malloc
 
@@ -540,12 +598,18 @@ fopen:
         iny 
     .endrepeat
 
+	lda #0
+	sta (temp_ptr), y 
+	iny
+	lda #0
+	sta (temp_ptr), y 
+
+	ldy #8
 	lda file_cluster
 	sta (temp_ptr), y 
 	iny
 	lda file_cluster+1
 	sta (temp_ptr), y 
-	iny
 
 @ret_skip:
     lda @temp_ptr

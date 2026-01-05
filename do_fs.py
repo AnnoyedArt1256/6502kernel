@@ -15,7 +15,7 @@ for root, dirs, files in os.walk(filedir):
         for i in files:
             root_contents += f"    write_dword F_{i.replace(".","_").replace("-","___")}-FS_header\n"
         root_contents += f"    write_dword $ffffffff\n"
-        root_contents += f"    pad 64\n"
+        root_contents += f"    pad_end 64\n"
         text += f"""
 ; filesystem written automatically
 ; DO NOT MODIFY MANUALLY UNLESS YOU ARE EXPERIENCED!!!
@@ -26,8 +26,12 @@ for root, dirs, files in os.walk(filedir):
 .endmacro
 
 .macro GET_CUR_CLUSTER_ADD off
-    .word ((*-FS_begin)>>6)+off
+    off_cluster .set ((*-FS_begin)>>6)+off
+    .word off_cluster
     cur_cluster .set (*-FS_begin)>>6
+    .ifndef .ident(.sprintf("FS_cluser_%d",cur_cluster)) 
+        .ident(.sprintf("FS_cluser_%d",cur_cluster)) .set off_cluster
+    .endif
 .endmacro
 
 .macro WRITE_CLUSTER
@@ -39,7 +43,8 @@ for root, dirs, files in os.walk(filedir):
 .macro write_dword value
     ; write_dword while writing the FAT over cluster boundaries
     prev_cur_cluster .set (*-FS_begin)>>6
-    .dword value
+    prev_cur_cluster_lsb .set (*-FS_begin)&$3f
+        .dword value
     cur_cluster .set (*-FS_begin)>>6
     .if cur_cluster <> prev_cur_cluster
         .ident(.sprintf("FS_cluser_%d",prev_cur_cluster)) .set cur_cluster
@@ -68,6 +73,12 @@ file_end:
     .if (* .mod v) <> 0
         .res v-(* .mod v), 0
     .endif
+.endmacro
+
+.macro pad_end v
+    cur_cluster .set (*-FS_begin)>>6
+    .ident(.sprintf("FS_cluser_%d",cur_cluster)) .set $fffe
+    pad 64
 .endmacro
 
 FS_header:
@@ -120,7 +131,7 @@ E{name}:
             j = j.replace("/","__").replace("-","___")
             contents += f"    write_dword {j}-FS_header\n"
         contents += f"    write_dword $ffffffff\n"
-        contents += f"    pad 64\n"
+        contents += f"    pad_end 64\n"
         name = "D_"+root_name
         name = name.replace("/","__").replace("-","___")
         text += f"""

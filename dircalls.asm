@@ -36,23 +36,30 @@ initdir:
     bne :-
 
     ; skip 48-char name
-    lda file_l
-    clc
-    adc #48
-    sta file_l
-    bcc :+
-    inc file_h
-: 
+    ;lda file_l
+    ;clc
+    ;adc #48
+    ;sta file_l
+    ;bcc :+
+    ;inc file_h
+;: 
 ;@skip_null_check:
 
     ldy #DIRENT_PTR
-    lda file_l
+    lda filesys_l
     sta (temp_ptr), y
     iny
-    lda file_h
+    lda filesys_h
     sta (temp_ptr), y
     ;iny
 
+    ldy #DIRENT_CLUSTER
+    lda file_cluster
+    sta (temp_ptr), y
+    iny
+    lda file_cluster+1
+    sta (temp_ptr), y
+    
     lda initdir_temp_ptr
     sta temp_ptr
     lda initdir_temp_ptr+1
@@ -101,29 +108,47 @@ readdir:
     lda (temp_ptr), y
     sta temp_ptr2+1
 
-    ldy #0
-    lda (temp_ptr2), y
+    ldx #<temp_ptr2
+    jsr read_internal
+    inc temp_ptr2
+    bne :+
+    inc temp_ptr2+1
+:
     sta readdir_temp_vars
-    ldy #1
-    lda (temp_ptr2), y
+    sta temp_ptr3
+    ldx #<temp_ptr2
+    jsr read_internal
+    inc temp_ptr2
+    bne :+
+    inc temp_ptr2+1
+:
     sta readdir_temp_vars+1
-    ldy #2
-    lda (temp_ptr2), y
+    sta temp_ptr3+1
+    ldx #<temp_ptr2
+    jsr read_internal
+    inc temp_ptr2
+    bne :+
+    inc temp_ptr2+1
+:
     sta readdir_temp_vars+2
-    ldy #3
-    lda (temp_ptr2), y
-    cmp #$80
-    bcc @skip_linked
+    ldx #<temp_ptr2
+    jsr read_internal
+    inc temp_ptr2
+    bne :+
+    inc temp_ptr2+1
+:
+    cmp #$ff
+    bne @skip_end
 
     ; check if the 32-bit linked ptr is $ffffffff
-    cmp #$ff
-    bne @skip_link_finish
-    cmp readdir_temp_vars+0
-    bne @skip_link_finish
-    cmp readdir_temp_vars+1
-    bne @skip_link_finish
-    cmp readdir_temp_vars+2
-    bne @skip_link_finish
+    ;cmp #$ff
+    ;bne @skip_link_finish
+    ;cmp readdir_temp_vars+0
+    ;bne @skip_link_finish
+    ;cmp readdir_temp_vars+1
+    ;bne @skip_link_finish
+    ;cmp readdir_temp_vars+2
+    ;bne @skip_link_finish
 
     ldy #DIRENT_FLAGS
     lda (temp_ptr), y
@@ -131,18 +156,17 @@ readdir:
     sta (temp_ptr), y
  
     jmp @end_readdir
-@skip_link_finish:
-    ldy #DIRENT_PTR
-    lda readdir_temp_vars+0
-    sta (temp_ptr), y
-    iny
-    lda readdir_temp_vars+1
-    sta (temp_ptr), y
-    jmp @readdir_loop
-@skip_linked:
+@skip_end:
 
-    ldy #0
-    lda (temp_ptr), y
+    lda temp_ptr2
+    and #$3f
+    bne :+
+    jmp @next_clusters
+@end_next_clusters:
+:
+    
+    ldx #<temp_ptr3
+    jsr read_internal
     and #DIR_FLAG
     beq :+
     ldy #DIRENT_FLAGS
@@ -152,34 +176,30 @@ readdir:
 :
 
     ; TODO: 32-bit ptrs
-    lda readdir_temp_vars
-    sec
-    sbc #128-3
+    lda temp_ptr3
+    clc
+    adc #3
     sta temp_ptr3
-    lda readdir_temp_vars+1
-    sbc #0
-    sta temp_ptr3+1
+    bcc :+
+    inc temp_ptr3+1
+:
 
     ldy #128
+@name_loop:
+    ldx #<temp_ptr3
+    jsr read_internal
+    inc temp_ptr3
+    bne :+
+    inc temp_ptr3+1
 :
-    lda (temp_ptr3), y
     sta (temp_ptr), y
-    beq :+
+    beq @skip_name_loop
     iny
     cpy #128+48
-    bne :-
-:
+    bne @name_loop
+@skip_name_loop:
     lda #0
-    sta (temp_ptr3), y
-
-    ; TOOD: make this 32-bit
-    lda temp_ptr2
-    clc
-    adc #4
-    sta temp_ptr2
-    bcc :+
-    inc temp_ptr2+1
-:
+    sta (temp_ptr), y
 
     ldy #DIRENT_PTR
     lda temp_ptr2
@@ -203,6 +223,56 @@ readdir:
     sta temp_ptr3+1
     plp
     rts
+
+@next_clusters:
+    ; ABCDEFGHIJKLMNOP
+    ; GHIJKLMNOP000000
+    ldy #DIRENT_CLUSTER
+    lda (temp_ptr), y
+    iny
+    clc
+    adc #8>>1
+    sta filesys_l
+    lda (temp_ptr), y
+    adc #0
+    sta filesys_h
+
+    asl filesys_l
+    rol filesys_h
+
+    ldx #<filesys_l
+    jsr read_internal
+    ldy #DIRENT_CLUSTER
+    sta (temp_ptr), y
+
+    inc filesys_l
+
+    ldx #<filesys_l
+    jsr read_internal
+    ldy #DIRENT_CLUSTER+1
+    sta (temp_ptr), y
+    sta filesys_h
+    dey
+    lda (temp_ptr), y
+    sta filesys_l
+
+    ; thanks llvm-mos :szok:
+    lsr filesys_h
+    ror filesys_l
+    lda #0
+    ror
+    lsr filesys_h
+    ror filesys_l
+    ror
+    clc
+    adc fs_start_off
+    ldy #DIRENT_PTR
+    sta (temp_ptr), y
+    lda filesys_l
+    adc fs_start_off+1
+    iny
+    sta (temp_ptr), y
+    jmp @end_next_clusters
 
 readdir_temp_vars:
     .byte 0, 0, 0, 0
