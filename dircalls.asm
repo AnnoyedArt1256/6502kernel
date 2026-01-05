@@ -35,10 +35,10 @@ initdir:
     cpy #128
     bne :-
 
-    ; skip 64-char name
+    ; skip 48-char name
     lda file_l
     clc
-    adc #64
+    adc #48
     sta file_l
     bcc :+
     inc file_h
@@ -166,7 +166,7 @@ readdir:
     sta (temp_ptr), y
     beq :+
     iny
-    cpy #128+64
+    cpy #128+48
     bne :-
 :
     lda #0
@@ -435,7 +435,7 @@ mkdir:
 
     iny
     inx
-    cpx #64
+    cpx #48
     bne @write_name
 @skip_write_name:
     dex
@@ -443,7 +443,7 @@ mkdir:
     lda #0
     jsr_save write_byte_mkdir
     inx
-    cpx #64
+    cpx #48
     bne @write_blank
 
     jsr write_end_marker ; for the newly created directory
@@ -675,11 +675,14 @@ chdir:
 @memcpy_dst:
     sta $2000, x
     inx
-    cpx #64
+    cpx #32
     bne @memcpy
 :
 @free_a:
     lda #0
     jsr free
     lda #0
+    rts    
+
+unlink:
     rts

@@ -15,12 +15,14 @@ temp_ptr3: .res 2
 io_buffer_ptr: .res 2
 filesys_l: .res 1
 filesys_h: .res 1
+filesys_cluster: .res 2
 
 lensys_l: .res 1
 lensys_h: .res 1
 
 file_l: .res 1
 file_h: .res 1
+file_cluster: .res 2
 
 length_l: .res 1
 length_h: .res 1
@@ -823,6 +825,7 @@ all_calls:
     .word exit_nmi
     .word readdir
     .word mkdir
+    .word unlink
 all_calls_end:
 
 name_temp_addrs_lo:
