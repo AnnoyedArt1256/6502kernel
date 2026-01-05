@@ -172,8 +172,8 @@ fgetc:
 	adc #0
 	sta (temp_ptr2), y
 
-	ldy #0
-	lda (temp_ptr3), y
+	ldx #<temp_ptr3
+	jsr read_internal
 	sta @final_byte+1
 
 @skip_ret:
@@ -488,7 +488,7 @@ fopen:
     ; .word len
     ; .word ptr
     ; .word start_ptr
-    ; .word padding
+    ; .word current_cluster
     ldx #8
     ldy #0
     jsr malloc
@@ -540,10 +540,10 @@ fopen:
         iny 
     .endrepeat
 
-	lda #0
+	lda file_cluster
 	sta (temp_ptr), y 
 	iny
-	lda #0
+	lda file_cluster+1
 	sta (temp_ptr), y 
 	iny
 
