@@ -82,7 +82,7 @@ file_end:
 .endmacro
 
 FS_header:
-    .dword FS_end-FS_begin
+    .dword 512
     .dword FS_begin-FS_header
     .repeat 512, I
         .word .ident(.sprintf("FS_cluser_%d",I))

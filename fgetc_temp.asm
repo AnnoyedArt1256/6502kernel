@@ -57,63 +57,19 @@ read_internal:
 	rts
 
 write_internal:
-    lda temp_ptr2
-    sta @temp_ptr
-    lda temp_ptr2+1
-    sta @temp_ptr+1
-    lda temp_ptr
-    sta @temp_ptr+2
-    lda temp_ptr+1
-    sta @temp_ptr+3
-
-	stx temp_ptr2
-	sty temp_ptr2+1
-	ldy #0
-	lda (temp_ptr2), y
-	sta temp_ptr3
-	iny
-	lda (temp_ptr2), y
-	sta temp_ptr3+1
-
-	; TODO: implement buffer flag
-
-	lda temp_ptr3
-	sec
-	sbc #4
-	sta temp_ptr3
-	lda temp_ptr3+1
-	sbc #0
-	sta temp_ptr3+1
-
-	ldy #8
-	lda (temp_ptr2), y
-	beq @skip_write
+	sta @temp_load+1
+	lda z:$00, x
 	clc
-	adc #4
-	sta @temp_ptr+4
-
-	ldy #4
-@do_write:
-	lda (temp_ptr2), y
-	sta (temp_ptr3), y
-	iny
-	cpy @temp_ptr+4
-	bne @do_write
-
-@skip_write:
-
-
-	lda @temp_ptr
-	sta temp_ptr2
-	lda @temp_ptr+1
-	sta temp_ptr2+1
-	lda @temp_ptr+2
-	sta temp_ptr
-	lda @temp_ptr+3
-	sta temp_ptr+1
+	adc #<FS_header
+	sta @temp_write+1
+	lda z:$01, x
+	adc #>FS_header
+	sta @temp_write+2
+@temp_load:
 	lda #0
+@temp_write:
+	sta $1000
 	rts
-@temp_ptr: .word 0, 0, 0
 
 ; YX = file handler
 fgetc:

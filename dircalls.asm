@@ -268,10 +268,12 @@ readdir:
     adc fs_start_off
     ldy #DIRENT_PTR
     sta (temp_ptr), y
+    sta temp_ptr2
     lda filesys_l
     adc fs_start_off+1
     iny
     sta (temp_ptr), y
+    sta temp_ptr2+1
     jmp @end_next_clusters
 
 readdir_temp_vars:
@@ -281,14 +283,6 @@ readdir_temp_vars:
 readdir_temp_ptr:
     .word 0, 0, 0
 
-; this is the magnum opus of shit code
-; do not read if you DO NOT want to wish to kill yourself after reading this code
-; this code made me rethink my entire life choices
-; "why am i doing shit in 6502 asm?"
-; "i should have done an OS in risc-v and called it a day"
-; "why am i doing THIS BULLSHIT for a school project?"
-; "i should have just continued programming in Scratch for fucks sake"
-; AGAIN, DO NOT READ THIS CODE UNLESS YOU WANT TO HAVE A BRAIN ANEURYSM
 
 ; XY = string pointer
 ; returns:
@@ -304,6 +298,10 @@ mkdir:
     sta mkdir_temp_ptr+2
     lda temp_ptr2+1
     sta mkdir_temp_ptr+3
+    lda temp_ptr3
+    sta mkdir_temp_ptr+4
+    lda temp_ptr3+1
+    sta mkdir_temp_ptr+5
 
     jsr combdir
     sta @free_a+1
@@ -369,6 +367,32 @@ mkdir:
     ldy temp_ptr2+1
     jsr getdir
 
+    lda file_cluster
+    sta mkdir_cluster_temp2+0
+    clc
+    adc #8>>1 ; not this shit again
+    sta mkdir_parent_cluster
+    lda file_cluster+1
+    sta mkdir_cluster_temp2+1
+    adc #0
+    sta mkdir_parent_cluster+1
+
+    asl mkdir_parent_cluster
+    rol mkdir_parent_cluster+1
+
+    lda mkdir_parent_cluster
+    sta temp_ptr3
+    lda mkdir_parent_cluster+1
+    sta temp_ptr3+1
+
+    ldx #<temp_ptr3
+    jsr read_internal
+    sta mkdir_parent_cluster
+    inc temp_ptr3
+    ldx #<temp_ptr3
+    jsr read_internal
+    sta mkdir_parent_cluster+1
+
 @free_a2:
     lda #0
     jsr free
@@ -396,44 +420,237 @@ mkdir:
     and #DIRENT_DONE ; if done?
     beq @check_end_loop
 
+    ; create dir pointers
+    jsr mkdir_find_cluster
+    lda mkdir_cluster
+    sta mkdir_cluster_temp
+    lda mkdir_cluster+1
+    sta mkdir_cluster_temp+1
+
+    ; write $fffe for END MARKER
+    lda mkdir_cluster_next 
+    sta temp_ptr2
+    lda mkdir_cluster_next+1
+    sta temp_ptr2+1
+
+    ldx #<temp_ptr2
+    lda #$fe
+    jsr write_internal
+    inc temp_ptr2
+    ldx #<temp_ptr2
+    lda #$ff
+    jsr write_internal
+    
+    ; populate dir pointers
+    lda mkdir_cluster_addr 
+    sta temp_ptr2
+    lda mkdir_cluster_addr+1
+    sta temp_ptr2+1
+
+    ldy #3
+:
+    ldx #<temp_ptr2
+    lda #$ff
+    jsr write_internal
+    inc temp_ptr2
+    dey
+    bpl :-
+    ldy #(64-4)-1
+:
+    ldx #<temp_ptr2
+    lda #0
+    jsr write_internal
+    inc temp_ptr2
+    dey
+    bpl :-
+
+    ; create dir entry
+    jsr mkdir_find_cluster
+
+    ; now populate the dir
+    lda mkdir_cluster_addr
+    sta temp_ptr2
+    sta mkdir_cluster_addr_dir
+    lda mkdir_cluster_addr+1
+    sta temp_ptr2+1
+    sta mkdir_cluster_addr_dir+1
+    ldx #<temp_ptr2
+    lda #$40
+    jsr write_internal
+    inc temp_ptr2
+    ldx #<temp_ptr2
+    lda #0
+    jsr write_internal
+    inc temp_ptr2
+    ldx #<temp_ptr2
+    lda #0
+    jsr write_internal
+    inc temp_ptr2
+
+    ; write dir name
+    ldy #1
+:
+    tya
+    clc
+    adc mkdir_filename_offset
+    tay
+
+    lda (temp_ptr), y
+    ldx #<temp_ptr2
+    jsr write_internal  
+
+    tya
+    sec
+    sbc mkdir_filename_offset
+    tay
+
+    inc temp_ptr2
+    iny 
+    cpy #48+1
+    bne :-
+
+    ; write dir pointer in FAT
+    
+    lda mkdir_cluster_next 
+    sta temp_ptr2
+    lda mkdir_cluster_next+1
+    sta temp_ptr2+1
+
+    ldx #<temp_ptr2
+    lda mkdir_cluster_temp
+    jsr write_internal
+    inc temp_ptr2
+    ldx #<temp_ptr2
+    lda mkdir_cluster_temp+1
+    jsr write_internal
+
+    ; more code MORE!!1! :sob:
+    lda mkdir_cluster_addr_dir
+    ora #48+3
+    sta temp_ptr2
+    lda mkdir_cluster_addr_dir+1
+    sta temp_ptr2+1
+
+    ldx #<temp_ptr2
+    lda mkdir_cluster_temp
+    jsr write_internal
+    inc temp_ptr2
+    ldx #<temp_ptr2
+    lda mkdir_cluster_temp+1
+    jsr write_internal
+
+    ; first the dir pointer
+    lda #0
+    sta temp_ptr2
+    lda @free_a3+1
+    sta temp_ptr2+1
+    
     ldy #DIRENT_PTR
     lda (temp_ptr2), y
-    sta mkdir_write_struct+WRITE_PTR+0
+    sta temp_ptr3
     iny
     lda (temp_ptr2), y
-    sta mkdir_write_struct+WRITE_PTR+1
-    iny
-    lda (temp_ptr2), y
-    sta mkdir_write_struct+WRITE_PTR+2
-    iny
-    lda (temp_ptr2), y
-    sta mkdir_write_struct+WRITE_PTR+3
+    sta temp_ptr3+1
 
-    lda #4
-    sta mkdir_write_struct+WRITE_LEN+0
+    ldx #<temp_ptr3
+    lda mkdir_cluster_addr
+    sta mkdir_cluster_addr_dir
+    jsr write_internal
+    inc temp_ptr3
+    ldx #<temp_ptr3
+    lda mkdir_cluster_addr+1
+    sta mkdir_cluster_addr_dir+1
+    jsr write_internal  
+    ldx #<temp_ptr3
+    inc temp_ptr3
+    lda mkdir_cluster_addr+2
+    sta mkdir_cluster_addr_dir+2
+    jsr write_internal  
+    ldx #<temp_ptr3
+    inc temp_ptr3
+    lda mkdir_cluster_addr+3
+    sta mkdir_cluster_addr_dir+3
+    jsr write_internal  
+    inc temp_ptr3
+
+    ; go to next cluster if needed
+    lda temp_ptr3
+    and #$3f
+    bne :+
+    jsr mkdir_find_cluster
+
+    lda mkdir_cluster_temp2
+    clc
+    adc #8>>1
+    sta mkdir_parent_addr
+    lda mkdir_cluster_temp2+1
+    adc #0
+    sta mkdir_parent_addr+1
+
+    asl mkdir_parent_addr
+    rol mkdir_parent_addr+1   
+
+    lda mkdir_parent_addr
+    sta temp_ptr3
+    lda mkdir_parent_addr+1
+    sta temp_ptr3+1
+
+    ldx #<temp_ptr3
+    lda mkdir_cluster
+    jsr write_internal
+    inc temp_ptr3
+    ldx #<temp_ptr3
+    lda mkdir_cluster+1
+    jsr write_internal
+
+    lda mkdir_cluster_next
+    sta temp_ptr3
+    lda mkdir_cluster_next+1
+    sta temp_ptr3+1
+
+    ldx #<temp_ptr3
+    lda #$fe
+    jsr write_internal
+    inc temp_ptr3
+    ldx #<temp_ptr3
+    lda #$ff
+    jsr write_internal
+
+    lda @free_a3+1
+    sta temp_ptr2+1
     lda #0
-    sta mkdir_write_struct+WRITE_LEN+1
-    sta mkdir_write_struct+WRITE_LEN+2
-    sta mkdir_write_struct+WRITE_LEN+3
+    sta temp_ptr2
 
-    lda #0
-    sta mkdir_write_struct+WRITE_FLAG
+    ldy #DIRENT_PTR
+    lda mkdir_cluster_addr
+    sta (temp_ptr2), y
+    iny
+    lda mkdir_cluster_addr+1
+    sta (temp_ptr2), y
+:
 
-    jsr get_fs_header
-    stx temp_ptr2
-    sty temp_ptr2+1
-
-    .repeat 4, I
-    ldy #I ; header fs off
+    ; now add $ffffffff (end marker)
+    ldy #DIRENT_FLAGS
     lda (temp_ptr2), y
-    sta mkdir_write_header_off+I
-    .if I = 0
-        clc
-    .endif
-    ldy #I+4 ; header fs len
-    adc (temp_ptr2), y
-    sta mkdir_write_struct+WRITE_VAL+I
-    sta mkdir_write_addr+I
+    and #$ff^DIRENT_DONE
+    sta (temp_ptr2), y
+
+    ldx #0
+    ldy @free_a3+1
+    jsr readdir
+
+    ldy #DIRENT_PTR
+    lda (temp_ptr2), y
+    sta temp_ptr3
+    iny
+    lda (temp_ptr2), y
+    sta temp_ptr3+1
+
+    .repeat 4
+        ldx #<temp_ptr3
+        lda #$ff
+        jsr write_internal
+        inc temp_ptr3
     .endrepeat
 
     lda temp_ptr2+1
@@ -442,144 +659,6 @@ mkdir:
 @free_a3:
     lda #0
     jsr free
-
-    ; add a new element to the directory's linked list
-
-    ldx #<mkdir_write_struct
-    ldy #>mkdir_write_struct
-    jsr write_internal
-    
-    ; add the end element value ($ffffffff)
-
-    lda #4
-    jsr mkdir_add_addr ; WTF?
-
-    lda mkdir_write_struct+WRITE_PTR+0
-    sta mkdir_last_item_off+0
-    lda mkdir_write_struct+WRITE_PTR+1
-    sta mkdir_last_item_off+1
-    lda mkdir_write_struct+WRITE_PTR+2
-    sta mkdir_last_item_off+2
-    lda mkdir_write_struct+WRITE_PTR+3
-    sta mkdir_last_item_off+3
-
-    lda #$ff
-    sta mkdir_write_struct+WRITE_VAL+0
-    sta mkdir_write_struct+WRITE_VAL+1
-    sta mkdir_write_struct+WRITE_VAL+2
-    sta mkdir_write_struct+WRITE_VAL+3
-
-    ldx #<mkdir_write_struct
-    ldy #>mkdir_write_struct
-    jsr write_internal
-    
-    .repeat 4, I
-        lda mkdir_write_addr+I
-        sta mkdir_write_struct+WRITE_PTR+I
-    .endrepeat
-
-    lda #$40 ; DIR_FLAG
-    sta mkdir_write_struct+WRITE_VAL+0
-    lda #0
-    sta mkdir_write_struct+WRITE_VAL+1
-    sta mkdir_write_struct+WRITE_VAL+2
-
-    lda #3
-    sta mkdir_write_struct+WRITE_LEN+0
-
-    ldx #<mkdir_write_struct
-    ldy #>mkdir_write_struct
-    jsr write_internal
-
-    lda #3-1
-    jsr mkdir_add_addr
-
-    ldx #0
-    ldy mkdir_filename_offset
-    iny
-@write_name:
-    lda (temp_ptr), y
-    beq @skip_write_name
-
-    jsr_save write_byte_mkdir
-
-    iny
-    inx
-    cpx #48
-    bne @write_name
-@skip_write_name:
-    dex
-@write_blank:
-    lda #0
-    jsr_save write_byte_mkdir
-    inx
-    cpx #48
-    bne @write_blank
-
-    jsr write_end_marker ; for the newly created directory
-    lda mkdir_write_struct+WRITE_PTR+0
-    sta mkdir_off_temp+0
-    lda mkdir_write_struct+WRITE_PTR+1
-    sta mkdir_off_temp+1
-    lda mkdir_write_struct+WRITE_PTR+2
-    sta mkdir_off_temp+2
-    lda mkdir_write_struct+WRITE_PTR+3
-    sta mkdir_off_temp+3
-    jsr write_end_marker ; for the parent directory's linked list
-
-    ; update the fs length dword
-    lda mkdir_write_struct+WRITE_PTR+0
-    sec
-    sbc mkdir_write_header_off+0
-    sta mkdir_write_struct+WRITE_VAL+0
-    lda mkdir_write_struct+WRITE_PTR+1
-    sbc mkdir_write_header_off+1
-    sta mkdir_write_struct+WRITE_VAL+1
-    lda mkdir_write_struct+WRITE_PTR+2
-    sbc mkdir_write_header_off+2
-    sta mkdir_write_struct+WRITE_VAL+2
-    lda mkdir_write_struct+WRITE_PTR+3
-    sbc mkdir_write_header_off+3
-    sta mkdir_write_struct+WRITE_VAL+3
-
-    ; TODO: make it more portable
-    lda #4
-    sta mkdir_write_struct+WRITE_LEN+0
-    lda #<(FS_header+4)
-    sta mkdir_write_struct+WRITE_PTR+0
-    lda #>(FS_header+4)
-    sta mkdir_write_struct+WRITE_PTR+1
-    lda #0
-    sta mkdir_write_struct+WRITE_PTR+2
-    sta mkdir_write_struct+WRITE_PTR+3
-
-    ldx #<mkdir_write_struct
-    ldy #>mkdir_write_struct
-    jsr write_internal
-
-    ; finally, write the parent directory's last index (i am so fucking tired)
-    lda mkdir_last_item_off+0
-    sta mkdir_write_struct+WRITE_PTR+0
-    lda mkdir_last_item_off+1
-    sta mkdir_write_struct+WRITE_PTR+1
-    lda mkdir_last_item_off+2
-    sta mkdir_write_struct+WRITE_PTR+2
-    lda mkdir_last_item_off+3
-    sta mkdir_write_struct+WRITE_PTR+3
-
-    lda mkdir_off_temp+0
-    sta mkdir_write_struct+WRITE_VAL+0
-    lda mkdir_off_temp+1
-    sta mkdir_write_struct+WRITE_VAL+1
-    lda mkdir_off_temp+2
-    sta mkdir_write_struct+WRITE_VAL+2
-    lda mkdir_off_temp+3
-    ora #$80
-    sta mkdir_write_struct+WRITE_VAL+3
-
-    ldx #<mkdir_write_struct
-    ldy #>mkdir_write_struct
-    jsr write_internal 
 
 @free_a:
     lda #0
@@ -592,6 +671,10 @@ mkdir:
     sta temp_ptr2+0
     lda mkdir_temp_ptr+3
     sta temp_ptr2+1
+    lda mkdir_temp_ptr+4
+    sta temp_ptr3+0
+    lda mkdir_temp_ptr+5
+    sta temp_ptr3+1
     lda #0
     plp
     rts
@@ -607,90 +690,140 @@ mkdir:
     sta temp_ptr2+0
     lda mkdir_temp_ptr+3
     sta temp_ptr2+1
+    lda mkdir_temp_ptr+4
+    sta temp_ptr3+0
+    lda mkdir_temp_ptr+5
+    sta temp_ptr3+1
     lda #1
     plp
     rts
 
 mkdir_temp_ptr: .word 0, 0
-;@dir_temp: .word 0
-mkdir_write_struct:
-    .dword 0 ; ptr
-    .dword 0 ; val/buffer ptr
-    .dword 0 ; len
-    .byte 0 ; flag
-mkdir_write_addr: .dword 0
-mkdir_write_header_off: .dword 0
 mkdir_filename_offset: .byte 0
-mkdir_last_item_off: .dword 0
-mkdir_off_temp: .dword 0
+mkdir_cluster: .word 0
+mkdir_cluster_temp: .word 0
+mkdir_cluster_temp2: .word 0
+mkdir_cluster_next: .word 0
+mkdir_cluster_addr: .dword 0
+mkdir_cluster_addr_dir: .dword 0
+mkdir_parent_cluster: .word 0
+mkdir_parent_addr: .dword 0
 
-write_byte_mkdir:
-    sta mkdir_write_struct+WRITE_VAL
+mkdir_find_cluster:
+    lda temp_ptr
+    sta @temp_ptr
+    lda temp_ptr+1
+    sta @temp_ptr+1
 
-    inc mkdir_write_struct+WRITE_PTR+0
+    jsr get_fs_header
+    stx temp_ptr2
+    sty temp_ptr2+1
+
+    ldy #0 ; cluster amt
+    lda (temp_ptr2), y
+    sta temp_ptr
+    lda (temp_ptr2), y
+    sta temp_ptr+1
+    
+    ; TODO: 32-bit addrs
+    lda #8
+    sta temp_ptr3
+    lda #0
+    sta temp_ptr3+1
+
+@check_cluster_loop:
+    ldx #<temp_ptr3
+    jsr read_internal
+    sta mkdir_cluster
+
+    inc temp_ptr3+0
     bne :+
-    inc mkdir_write_struct+WRITE_PTR+1
-    bne :+
-    inc mkdir_write_struct+WRITE_PTR+2
-    bne :+
-    inc mkdir_write_struct+WRITE_PTR+3
-    bne :+
+    inc temp_ptr3+1
 :
 
-    lda #1
-    sta mkdir_write_struct+WRITE_LEN+0
+    ldx #<temp_ptr3
+    jsr read_internal
+    sta mkdir_cluster+1
 
-    ldx #<mkdir_write_struct
-    ldy #>mkdir_write_struct
-    jmp write_internal
+    inc temp_ptr3+0
+    bne :+
+    inc temp_ptr3+1
+:
 
-mkdir_add_addr:
-    clc
-    adc mkdir_write_struct+WRITE_PTR+0
-    sta mkdir_write_struct+WRITE_PTR+0
-    lda mkdir_write_struct+WRITE_PTR+1
-    adc #0
-    sta mkdir_write_struct+WRITE_PTR+1
-    lda mkdir_write_struct+WRITE_PTR+2
-    adc #0
-    sta mkdir_write_struct+WRITE_PTR+2
-    lda mkdir_write_struct+WRITE_PTR+3
-    adc #0
-    sta mkdir_write_struct+WRITE_PTR+3
+    cmp #$ff
+    bne :+
+    cmp mkdir_cluster
+    beq @success
+:
+
+    lda temp_ptr
+    bne :+
+    dec temp_ptr+1
+:
+    dec temp_ptr
+
+    lda temp_ptr
+    ora temp_ptr+1
+    bne @check_cluster_loop
+    ; FAIL return
+    lda #0
+    sta mkdir_cluster
+    sta mkdir_cluster+1
+    lda @temp_ptr
+    sta temp_ptr
+    lda @temp_ptr+1
+    sta temp_ptr+1
     rts
 
-write_end_marker:
-    ; write end marker and extra element (for when the directory gets added w/ files)
-    lda #$ff
-    sta mkdir_write_struct+WRITE_VAL+0
-    sta mkdir_write_struct+WRITE_VAL+1
-    sta mkdir_write_struct+WRITE_VAL+2
-    sta mkdir_write_struct+WRITE_VAL+3
-    lda #4
-    sta mkdir_write_struct+WRITE_LEN+0
-    lda #0
-    sta mkdir_write_struct+WRITE_FLAG
-
-    ldx #<mkdir_write_struct
-    ldy #>mkdir_write_struct
-    jsr write_internal
+@success:
+    lda temp_ptr3
+    sec
+    sbc #2
+    sta mkdir_cluster_next
+    lda temp_ptr3+1
+    sbc #0
+    sta mkdir_cluster_next+1
     
-    ; this whole syscall is so unoptimized i fucking hate it
-    lda #4
-    jsr mkdir_add_addr
+    lsr temp_ptr3+1
+    ror temp_ptr3
+    lda temp_ptr3
+    sec
+    sbc #(8>>1)+1
+    sta mkdir_cluster
+    bcs :+
+    dec temp_ptr3+1
+:
+    lda temp_ptr3+1
+    sta mkdir_cluster+1
 
+    ; TODO: 32-bit
+    lda mkdir_cluster
+    sta mkdir_cluster_addr
+    lda mkdir_cluster+1
+    sta mkdir_cluster_addr+1
+
+    lsr mkdir_cluster_addr+1
+    ror mkdir_cluster_addr
     lda #0
-    sta mkdir_write_struct+WRITE_VAL+0
-    sta mkdir_write_struct+WRITE_VAL+1
-    sta mkdir_write_struct+WRITE_VAL+2
-    sta mkdir_write_struct+WRITE_VAL+3
+    ror
+    lsr mkdir_cluster_addr+1
+    ror mkdir_cluster_addr
+    ror
+    clc
+    adc fs_start_off
+    tax
+    lda mkdir_cluster_addr
+    adc fs_start_off+1
+    sta mkdir_cluster_addr+1
+    stx mkdir_cluster_addr
 
-    ldx #<mkdir_write_struct
-    ldy #>mkdir_write_struct
-    jsr write_internal
+    lda @temp_ptr
+    sta temp_ptr
+    lda @temp_ptr+1
+    sta temp_ptr+1
+    rts
 
-    lda #4
-    jmp mkdir_add_addr
+@temp_ptr: .word 0
 
 ; returns: XY = dir str ptr
 get_curdir:

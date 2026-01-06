@@ -64,7 +64,7 @@ file_end:
 .endmacro
 
 FS_header:
-    .dword FS_end-FS_begin
+    .dword 512
     .dword FS_begin-FS_header
     .repeat 512, I
         .word .ident(.sprintf("FS_cluser_%d",I))
@@ -444,10 +444,235 @@ D___test___fat:
     WRITE_CLUSTER
     .res 64-(1+2+48+2), 0
 BD___test___fat:
+    write_dword D___test___fat__dir13-FS_header
+    write_dword D___test___fat__dir14-FS_header
+    write_dword D___test___fat__dir12-FS_header
+    write_dword D___test___fat__dir2-FS_header
+    write_dword D___test___fat__dir5-FS_header
+    write_dword D___test___fat__dir4-FS_header
+    write_dword D___test___fat__dir3-FS_header
+    write_dword D___test___fat__dir10-FS_header
+    write_dword D___test___fat__dir11-FS_header
+    write_dword D___test___fat__dir6-FS_header
+    write_dword D___test___fat__dir1-FS_header
+    write_dword D___test___fat__dir8-FS_header
+    write_dword D___test___fat__dir9-FS_header
+    write_dword D___test___fat__dir0-FS_header
+    write_dword D___test___fat__dir7-FS_header
     write_dword $ffffffff
     pad_end 64
 
 ED___test___fat:
+        
+D___test___fat__dir13:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir13"
+    .res 48-5, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir13:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir13:
+        
+D___test___fat__dir14:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir14"
+    .res 48-5, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir14:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir14:
+        
+D___test___fat__dir12:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir12"
+    .res 48-5, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir12:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir12:
+        
+D___test___fat__dir2:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir2"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir2:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir2:
+        
+D___test___fat__dir5:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir5"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir5:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir5:
+        
+D___test___fat__dir4:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir4"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir4:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir4:
+        
+D___test___fat__dir3:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir3"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir3:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir3:
+        
+D___test___fat__dir10:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir10"
+    .res 48-5, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir10:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir10:
+        
+D___test___fat__dir11:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir11"
+    .res 48-5, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir11:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir11:
+        
+D___test___fat__dir6:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir6"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir6:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir6:
+        
+D___test___fat__dir1:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir1"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir1:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir1:
+        
+D___test___fat__dir8:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir8"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir8:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir8:
+        
+D___test___fat__dir9:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir9"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir9:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir9:
+        
+D___test___fat__dir0:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir0"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir0:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir0:
+        
+D___test___fat__dir7:
+    .byte DIR_FLAG
+    .word 0
+    .byte "dir7"
+    .res 48-4, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BD___test___fat__dir7:
+    write_dword $ffffffff
+    pad_end 64
+
+ED___test___fat__dir7:
         
 
 FS_end:
