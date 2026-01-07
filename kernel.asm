@@ -48,6 +48,18 @@ matrixhi: .res 1
     .endif
 .endmacro
 
+.macro puts_nobuf addr
+    .local @loop, @loop_skip
+    ldx #0
+@loop:
+    lda addr, x
+    beq @loop_skip
+    jsr_save putc_no_buf
+    inx
+    bne @loop
+@loop_skip:
+.endmacro
+
 jmp kernel_start
 
 .res $4800-*, 0
@@ -117,6 +129,8 @@ main:
     ldy #>tty_process
     jsr add_process
 
+    puts_nobuf tty_loaded
+
     ldx #<test_o65_str
     ldy #>test_o65_str
     jsr fopen
@@ -124,6 +138,13 @@ main:
     tay
     ldx #0
     jsr load_exec
+
+    puts_nobuf welcome_string
+    puts_nobuf uname_str
+    lda #$0a
+    jsr putc_no_buf
+    lda #$0a
+    jsr putc_no_buf
 
     cli
 
@@ -841,6 +862,15 @@ name_temp_addrs_hi:
 
 test_o65_str:
     .byte "/bin/sh", 0
+
+tty_loaded:
+    .byte "tty driver is loaded", $0a, 0
+
+welcome_string:
+    .byte "welcome to ", 0
+
+uname_str:
+    .byte "6502kernel", 0
 
 align 256
 zp_temp: .res 64*16, 0

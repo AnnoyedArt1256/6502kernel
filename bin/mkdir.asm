@@ -51,10 +51,10 @@ test_process:
     cli
 
     lda argc
-    beq do_exit ; (argc == 0), whart?!?!?
+    beq do_exit_small_arg ; (argc == 0), whart?!?!?
     dec argc
     lda argc
-    beq do_exit ; argc == 1
+    beq do_exit_small_arg ; argc == 1
 
     jsr skip_arg
 
@@ -71,11 +71,22 @@ do_exit:
     cli
     jsr exit
 
+do_exit_small_arg:
+    cli
+    puts mkdir_not_args
+    jsr exit
+
 create_dir_arg:
     stx temp
     ldx args
     ldy args+1
     jsr mkdir
+    cmp #0
+    beq :+
+    puts mkdir_already
+    puts_indy args
+    puts mkdir_already2
+:
     ldx temp
     rts
 
@@ -99,3 +110,11 @@ inc_arg:
     adc #0
     sta args+1
     rts
+
+mkdir_not_args:
+.byte "mkdir: not enough arguments", 0
+
+mkdir_already:
+.byte "mkdir: ", 0
+mkdir_already2:
+.byte " is already a directory", $0a, 0
