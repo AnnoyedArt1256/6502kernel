@@ -621,12 +621,12 @@ mkdir:
     lda #0
     sta temp_ptr2
 
-    ldy #DIRENT_PTR
-    lda mkdir_cluster_addr
-    sta (temp_ptr2), y
-    iny
-    lda mkdir_cluster_addr+1
-    sta (temp_ptr2), y
+    ;ldy #DIRENT_PTR
+    ;lda mkdir_cluster_addr
+    ;sta (temp_ptr2), y
+    ;iny
+    ;lda mkdir_cluster_addr+1
+    ;sta (temp_ptr2), y
 :
 
     ; now add $ffffffff (end marker)
