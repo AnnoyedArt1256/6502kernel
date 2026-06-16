@@ -60,7 +60,12 @@ matrixhi: .res 1
 @loop_skip:
 .endmacro
 
+jsr $0903
 jmp kernel_start
+
+
+.res $0900-*, 0
+.incbin "irqload_0900.prg", 2
 
 .res $4800-*, 0
 
@@ -845,8 +850,6 @@ all_calls:
     .word malloc_range
     .word exit_nmi
     .word readdir
-    .word mkdir
-    .word unlink
 all_calls_end:
 
 name_temp_addrs_lo:

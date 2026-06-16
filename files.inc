@@ -195,7 +195,6 @@ BD___bin:
     write_dword F___bin__printnl-FS_header
     write_dword F___bin__clear-FS_header
     write_dword F___bin__sh-FS_header
-    write_dword F___bin__mkdir-FS_header
     write_dword F___bin__ls-FS_header
     write_dword $ffffffff
     pad_end 64
@@ -273,18 +272,6 @@ F___bin__sh:
 BF___bin__sh:
     CUSTOM_INCBIN "./disk/bin/sh"
 EF___bin__sh:
-            
-F___bin__mkdir:
-    .byte 0
-    .word EF___bin__mkdir-BF___bin__mkdir
-    .byte "mkdir"
-    .res 48-5, 0
-    GET_CUR_CLUSTER_ADD 1
-    WRITE_CLUSTER
-    .res 64-(1+2+48+2), 0
-BF___bin__mkdir:
-    CUSTOM_INCBIN "./disk/bin/mkdir"
-EF___bin__mkdir:
             
 F___bin__ls:
     .byte 0
