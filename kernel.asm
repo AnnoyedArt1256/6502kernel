@@ -228,7 +228,6 @@ get_free_process:
     rts
 .endproc
 
-/*
 putnl:
     lda #$0a
     jmp putc
@@ -246,7 +245,6 @@ hello:
 
 hello_text:
     .byte "Hello, World!", 10, 0
-*/
 
 zp_temp_inds_lo:
     .repeat 16, I

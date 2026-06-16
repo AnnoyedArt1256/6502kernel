@@ -287,7 +287,7 @@ start_page_text: .byte 0
 end_page_text: .byte 0
 start_page_data: .byte 0
 end_page_data: .byte 0
-;upload_ptr_temp: .word 0
+upload_ptr_temp: .word 0
 temp_ptr_temp_exec: .word 0
 seg_off: .word 0
 seg_len: .word 0

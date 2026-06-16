@@ -202,13 +202,11 @@ malloc_range:
     txa
     ldy #0
     rts
-/*
 @skip_fail:
     lda #0
     tax
     ldy #1
     rts
-*/
 
 ; A = hi-byte of allocated address (page)
 free:
