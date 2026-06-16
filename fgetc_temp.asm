@@ -315,6 +315,33 @@ combdir:
 	ldy #0
 @name_base_copy:
 	lda (findname_l), y
+	cmp #'.'
+	bne @skip_period
+	cpy #0
+	beq :+
+	dey
+	lda (findname_l), y
+	iny
+	cmp #'/' 
+	bne @skip_period_load_dot
+:
+
+	iny
+	lda (findname_l), y
+	dey
+	cmp #'.'
+	bne :+
+	lda @dir_base_dst+2
+	jsr combdir_double_dot
+	jmp @name_base_copy
+:
+	dex
+	dex
+@skip_period_load_dot:
+	lda #'.'
+@skip_period:
+
+	cmp #0
 	beq :+
 @name_base_dst:
 	sta $1000, x
@@ -366,6 +393,23 @@ combdir:
 	ldy #0
 @dir_skip_find_copy:
 	lda (findname_l), y
+	cmp #'.'
+	bne @skip_period2
+	iny
+	lda (findname_l), y
+	dey
+	cmp #'.'
+	bne :+
+	lda @dir_skip_find_dst+2
+	jsr combdir_double_dot
+	jmp @dir_skip_find_copy
+:
+	dex
+	dex
+	lda #'.'
+@skip_period2:
+
+	cmp #0
 	beq :+
 @dir_skip_find_dst:
 	sta $1000, y
