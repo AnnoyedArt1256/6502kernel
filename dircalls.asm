@@ -91,8 +91,6 @@ readdir:
     stx temp_ptr
     sty temp_ptr+1
 
-@readdir_loop:
-
     ldy #DIRENT_FLAGS
     lda (temp_ptr), y
     and #DIRENT_DONE
@@ -854,8 +852,6 @@ chdir:
     lda #1
     rts
 :
-
-
 
     jsr get_curdir
     stx @memset_dst+1
