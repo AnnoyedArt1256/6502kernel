@@ -385,8 +385,9 @@ write_prg:
     asl
     asl
     asl
+    asl
     clc
-    adc #16-1
+    adc #32-1
     sta processes_sp, x
 
     lda start_page_text
@@ -427,7 +428,7 @@ get_free_process:
     lda processes_exist, x
     beq :+
     inx
-    cpx #16
+    cpx #8
     bne :-
     lda #$ff
     rts

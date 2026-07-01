@@ -2,11 +2,10 @@
 a simple OS for 6502-based systems (currently C64 only)
 
 ## features
-- a round-robin task switcher with up to 16 processes (using the C64's timer IRQ)
+- a round-robin task switcher with up to 8 processes (using the C64's timer IRQ)
 - a read only file system (for now)
 - NMI interrupt support for constant tasks like playing music
 - relocatable program support (using custom .rel format)
-- many (27!) syscalls (some like unix, others custom)
 - a basic shell
 - page allocator
 - malloc and free
