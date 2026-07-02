@@ -26,7 +26,7 @@
     ; write_dword while writing the FAT over cluster boundaries
     prev_cur_cluster .set (*-FS_begin)>>6
     prev_cur_cluster_lsb .set (*-FS_begin)&$3f
-        .dword value
+    .dword value
     cur_cluster .set (*-FS_begin)>>6
     .if cur_cluster <> prev_cur_cluster
         .ident(.sprintf("FS_cluser_%d",prev_cur_cluster)) .set cur_cluster
@@ -145,6 +145,22 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
+    write_dword F_vertigo_sid-FS_header
+    write_dword 1953654134 ; file name chunk
+    write_dword 779052905 ; file name chunk
+    write_dword 6580595 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
     write_dword F_fork___bomb-FS_header
     write_dword 1802661734 ; file name chunk
     write_dword 1836016173 ; file name chunk
@@ -161,12 +177,12 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword F_flobber_sid-FS_header
-    write_dword 1651469414 ; file name chunk
-    write_dword 779248994 ; file name chunk
-    write_dword 6580595 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
+    write_dword F_vertigo___remake_sid-FS_header
+    write_dword 1953654134 ; file name chunk
+    write_dword 762275689 ; file name chunk
+    write_dword 1634559346 ; file name chunk
+    write_dword 1932420459 ; file name chunk
+    write_dword 25705 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -181,22 +197,6 @@ BD_root:
     write_dword 6580595 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
-    write_dword F_shape_sid-FS_header
-    write_dword 1885431923 ; file name chunk
-    write_dword 1769156197 ; file name chunk
-    write_dword 100 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -257,6 +257,17 @@ BF_test___prog:
     CUSTOM_INCBIN "./disk/test-prog"
 EF_test___prog:
             
+F_vertigo_sid:
+    .byte 0
+    .word EF_vertigo_sid-BF_vertigo_sid
+    .res 48, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BF_vertigo_sid:
+    CUSTOM_INCBIN "./disk/vertigo.sid"
+EF_vertigo_sid:
+            
 F_fork___bomb:
     .byte 0
     .word EF_fork___bomb-BF_fork___bomb
@@ -268,16 +279,16 @@ BF_fork___bomb:
     CUSTOM_INCBIN "./disk/fork-bomb"
 EF_fork___bomb:
             
-F_flobber_sid:
+F_vertigo___remake_sid:
     .byte 0
-    .word EF_flobber_sid-BF_flobber_sid
+    .word EF_vertigo___remake_sid-BF_vertigo___remake_sid
     .res 48, 0
     GET_CUR_CLUSTER_ADD 1
     WRITE_CLUSTER
     .res 64-(1+2+48+2), 0
-BF_flobber_sid:
-    CUSTOM_INCBIN "./disk/flobber.sid"
-EF_flobber_sid:
+BF_vertigo___remake_sid:
+    CUSTOM_INCBIN "./disk/vertigo-remake.sid"
+EF_vertigo___remake_sid:
             
 F_sid:
     .byte 0
@@ -289,17 +300,6 @@ F_sid:
 BF_sid:
     CUSTOM_INCBIN "./disk/sid"
 EF_sid:
-            
-F_shape_sid:
-    .byte 0
-    .word EF_shape_sid-BF_shape_sid
-    .res 48, 0
-    GET_CUR_CLUSTER_ADD 1
-    WRITE_CLUSTER
-    .res 64-(1+2+48+2), 0
-BF_shape_sid:
-    CUSTOM_INCBIN "./disk/shape.sid"
-EF_shape_sid:
             
 F_test_sh:
     .byte 0
@@ -382,6 +382,22 @@ BD___bin:
     write_dword F___bin__printnl-FS_header
     write_dword 1852404336 ; file name chunk
     write_dword 7106164 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword 0 ; file name chunk
+    write_dword F___bin__uname-FS_header
+    write_dword 1835101813 ; file name chunk
+    write_dword 101 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -491,6 +507,17 @@ F___bin__printnl:
 BF___bin__printnl:
     CUSTOM_INCBIN "./disk/bin/printnl"
 EF___bin__printnl:
+            
+F___bin__uname:
+    .byte 0
+    .word EF___bin__uname-BF___bin__uname
+    .res 48, 0
+    GET_CUR_CLUSTER_ADD 1
+    WRITE_CLUSTER
+    .res 64-(1+2+48+2), 0
+BF___bin__uname:
+    CUSTOM_INCBIN "./disk/bin/uname"
+EF___bin__uname:
             
 F___bin__clear:
     .byte 0

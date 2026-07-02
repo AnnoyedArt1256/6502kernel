@@ -22,7 +22,6 @@ lensys_h: .res 1
 
 file_l: .res 1
 file_h: .res 1
-file_cluster: .res 2
 
 length_l: .res 1
 length_h: .res 1
@@ -525,6 +524,7 @@ exit:
 ;   A = 0 if valid, otherwise error code
 ;   Y = new PID for exec program
 exec:
+    php
     sei
     sta @argc_cnt+1
     stx @argc_cntx+1
@@ -535,7 +535,7 @@ exec:
     beq :+
 @fail_ret:
     ; return with error 1
-    cli
+    plp
     rts
 :
 
@@ -580,7 +580,7 @@ exec:
 
 @end_exec:
     lda #0
-    cli
+    plp
     rts
 
 check_pid_exist:
@@ -833,6 +833,7 @@ all_calls:
     .word malloc_range
     .word exit_nmi
     .word readdir
+    .word uname
 all_calls_end:
 
 name_temp_addrs_lo:
@@ -857,6 +858,11 @@ welcome_string:
 
 uname_str:
     .byte "6502kernel", 0
+
+uname:
+    ldx #<uname_str
+    ldy #>uname_str
+    rts
 
 align 256
 zp_temp: .res 64*8, 0

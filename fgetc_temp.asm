@@ -56,21 +56,6 @@ read_internal:
 	lda $1000
 	rts
 
-write_internal:
-	sta @temp_load+1
-	lda z:$00, x
-	clc
-	adc #<FS_header
-	sta @temp_write+1
-	lda z:$01, x
-	adc #>FS_header
-	sta @temp_write+2
-@temp_load:
-	lda #0
-@temp_write:
-	sta $1000
-	rts
-
 ; YX = file handler
 fgetc:
     lda temp_ptr2

@@ -11,6 +11,7 @@ for root, dirs, files in os.walk(filedir):
     if root == filedir:
         root_contents = ""
         for i in dirs:
+            if i == ".DS_Store": continue
             root_contents += f"    write_dword D___{i.replace(".","_").replace("-","___")}-FS_header\n"
             name_arr = list(i.encode("utf-8"))
             name_arr = name_arr+[0]*(60-len(name_arr))
@@ -18,6 +19,7 @@ for root, dirs, files in os.walk(filedir):
                 val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
                 root_contents += f"    write_dword {val} ; file name chunk\n"
         for i in files:
+            if i == ".DS_Store": continue
             root_contents += f"    write_dword F_{i.replace(".","_").replace("-","___")}-FS_header\n"
             name_arr = list(i.encode("utf-8"))
             name_arr = name_arr+[0]*(60-len(name_arr))
@@ -54,7 +56,7 @@ for root, dirs, files in os.walk(filedir):
     ; write_dword while writing the FAT over cluster boundaries
     prev_cur_cluster .set (*-FS_begin)>>6
     prev_cur_cluster_lsb .set (*-FS_begin)&$3f
-        .dword value
+    .dword value
     cur_cluster .set (*-FS_begin)>>6
     .if cur_cluster <> prev_cur_cluster
         .ident(.sprintf("FS_cluser_%d",prev_cur_cluster)) .set cur_cluster
@@ -113,6 +115,7 @@ BD_root:
 ED_root:
         """
         for i in files:
+            if i == ".DS_Store": continue
             name = f"F_{i.replace(".","_").replace("-","___")}"
             filename = os.path.join(root,i)
             text += f"""
@@ -132,6 +135,7 @@ E{name}:
         root_name = root[len(filedir):]
         contents = ""
         for i in dirs:
+            if i == ".DS_Store": continue
             j = "D_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
             contents += f"    write_dword {j}-FS_header\n"
@@ -141,6 +145,7 @@ E{name}:
                 val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
                 contents += f"    write_dword {val} ; file name chunk\n"
         for i in files:
+            if i == ".DS_Store": continue
             j = "F_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
             contents += f"    write_dword {j}-FS_header\n"
@@ -166,6 +171,7 @@ B{name}:
 E{name}:
         """
         for i in files:
+            if i == ".DS_Store": continue
             name = "F_"+root_name+"/"+(i.replace(".","_").replace("-","___"))
             name = name.replace("/","__").replace("-","___")
             filename = os.path.join(root,i)

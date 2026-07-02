@@ -57,10 +57,8 @@ LAB_find:
 
     lda #1
     sta filesys_cluster
-    sta file_cluster
     lda #0
     sta filesys_cluster+1
-    sta file_cluster+1
 
 	LDY	#$00				; clear index
 	LDA	(findname_l),Y		; get the first byte of the name to find
