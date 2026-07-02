@@ -12,13 +12,23 @@ for root, dirs, files in os.walk(filedir):
         root_contents = ""
         for i in dirs:
             root_contents += f"    write_dword D___{i.replace(".","_").replace("-","___")}-FS_header\n"
+            name_arr = list(i.encode("utf-8"))
+            name_arr = name_arr+[0]*(60-len(name_arr))
+            for x in range(0, 60, 4):
+                val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
+                root_contents += f"    write_dword {val} ; file name chunk\n"
         for i in files:
             root_contents += f"    write_dword F_{i.replace(".","_").replace("-","___")}-FS_header\n"
+            name_arr = list(i.encode("utf-8"))
+            name_arr = name_arr+[0]*(60-len(name_arr))
+            for x in range(0, 60, 4):
+                val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
+                root_contents += f"    write_dword {val} ; file name chunk\n"
         root_contents += f"    write_dword $ffffffff\n"
         root_contents += f"    pad_end 64\n"
         text += f"""
 ; filesystem written automatically
-; DO NOT MODIFY MANUALLY UNLESS YOU ARE EXPERIENCED!!!
+; DO NOT MODIFY MANUALLY!!!
 
 .macro GET_CUR_CLUSTER
     .word (*-FS_begin)>>6
@@ -109,8 +119,7 @@ ED_root:
 {name}:
     .byte 0
     .word E{name}-B{name}
-    .byte \"{i}\"
-    .res 48-{len(i)}, 0
+    .res 48, 0
     GET_CUR_CLUSTER_ADD 1
     WRITE_CLUSTER
     .res 64-(1+2+48+2), 0
@@ -126,10 +135,20 @@ E{name}:
             j = "D_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
             contents += f"    write_dword {j}-FS_header\n"
+            name_arr = list(i.encode("utf-8"))
+            name_arr = name_arr+[0]*(60-len(name_arr))
+            for x in range(0, 60, 4):
+                val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
+                contents += f"    write_dword {val} ; file name chunk\n"
         for i in files:
             j = "F_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
             contents += f"    write_dword {j}-FS_header\n"
+            name_arr = list(i.encode("utf-8"))
+            name_arr = name_arr+[0]*(60-len(name_arr))
+            for x in range(0, 60, 4):
+                val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
+                contents += f"    write_dword {val} ; file name chunk\n"
         contents += f"    write_dword $ffffffff\n"
         contents += f"    pad_end 64\n"
         name = "D_"+root_name
@@ -138,8 +157,7 @@ E{name}:
 {name}:
     .byte DIR_FLAG
     .word 0
-    .byte \"{Path(root_name).stem}\"
-    .res 48-{len(Path(root_name).stem)}, 0
+    .res 48, 0
     GET_CUR_CLUSTER_ADD 1
     WRITE_CLUSTER
     .res 64-(1+2+48+2), 0
@@ -155,8 +173,7 @@ E{name}:
 {name}:
     .byte 0
     .word E{name}-B{name}
-    .byte \"{i}\"
-    .res 48-{len(i)}, 0
+    .res 48, 0
     GET_CUR_CLUSTER_ADD 1
     WRITE_CLUSTER
     .res 64-(1+2+48+2), 0

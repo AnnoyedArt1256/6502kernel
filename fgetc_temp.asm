@@ -561,10 +561,10 @@ fopen:
 	sta (temp_ptr), y 
 
 	ldy #8
-	lda file_cluster
+	lda filesys_cluster
 	sta (temp_ptr), y 
 	iny
-	lda file_cluster+1
+	lda filesys_cluster+1
 	sta (temp_ptr), y 
 
 @ret_skip:

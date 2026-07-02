@@ -54,10 +54,10 @@ initdir:
     ;iny
 
     ldy #DIRENT_CLUSTER
-    lda file_cluster
+    lda filesys_cluster
     sta (temp_ptr), y
     iny
-    lda file_cluster+1
+    lda filesys_cluster+1
     sta (temp_ptr), y
     
     lda initdir_temp_ptr
@@ -108,6 +108,7 @@ readdir:
     lda (temp_ptr), y
     sta temp_ptr2+1
 
+.if 0
     ldx #<temp_ptr2
     jsr read_internal
     inc temp_ptr2
@@ -137,6 +138,34 @@ readdir:
     bne :+
     inc temp_ptr2+1
 :
+.else
+    ldx #<temp_ptr2
+    jsr read_internal
+    inc temp_ptr2
+    bne :+
+    inc temp_ptr2+1
+:
+    sta temp_ptr3
+    ldx #<temp_ptr2
+    jsr read_internal
+    inc temp_ptr2
+    bne :+
+    inc temp_ptr2+1
+:
+    sta temp_ptr3+1
+
+    inc temp_ptr2
+    bne :+
+    inc temp_ptr2+1
+:
+    ldx #<temp_ptr2
+    jsr read_internal
+    inc temp_ptr2
+    bne :+
+    inc temp_ptr2+1
+:
+.endif
+
     cmp #$ff
     bne @skip_end
 
@@ -157,13 +186,6 @@ readdir:
  
     jmp @end_readdir
 @skip_end:
-
-    lda temp_ptr2
-    and #$3f
-    bne :+
-    jmp @next_clusters
-@end_next_clusters:
-:
     
     ldx #<temp_ptr3
     jsr read_internal
@@ -175,24 +197,16 @@ readdir:
     sta (temp_ptr), y
 :
 
-    ; TODO: 32-bit ptrs
-    lda temp_ptr3
-    clc
-    adc #3
-    sta temp_ptr3
-    bcc :+
-    inc temp_ptr3+1
-:
-
     ldy #128
 @name_loop:
-    ldx #<temp_ptr3
+    ldx #<temp_ptr2
     jsr read_internal
-    inc temp_ptr3
+    inc temp_ptr2
     bne :+
-    inc temp_ptr3+1
+    inc temp_ptr2+1
 :
     sta (temp_ptr), y
+    cmp #0
     beq @skip_name_loop
     iny
     cpy #128+48
@@ -200,6 +214,17 @@ readdir:
 @skip_name_loop:
     lda #0
     sta (temp_ptr), y
+
+    lda temp_ptr2
+    and #$ff^$3f
+    sta temp_ptr2
+
+    ;lda temp_ptr2
+    ;and #$3f
+    ;bne :+
+    jmp @next_clusters
+@end_next_clusters:
+;:
 
     ldy #DIRENT_PTR
     lda temp_ptr2
@@ -276,9 +301,11 @@ readdir:
     sta temp_ptr2+1
     jmp @end_next_clusters
 
+.if 0
 readdir_temp_vars:
     .byte 0, 0, 0, 0
     .byte 0, 0
+.endif
 
 readdir_temp_ptr:
     .word 0, 0, 0

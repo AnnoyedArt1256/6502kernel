@@ -96,7 +96,7 @@ LAB_exit_n_found:
 LAB_nextfile:
 	CLC					; clear carry for add
 	LDA	filesys_l			; get filesys low byte
-	ADC	#$04				; increment to next pointer
+	ADC	#$40				; increment to next pointer
 	STA	filesys_l			; save filesys low byte
     ; check for cluster boundary
     and #$3f
@@ -135,10 +135,11 @@ LAB_nextfile:
     lsr filesys_h
     ror filesys_l
     ror
+    ldx filesys_l
     clc
     adc fs_start_off
     sta filesys_l
-    lda filesys_h
+    txa
     adc fs_start_off+1
     sta filesys_h
 :
@@ -185,7 +186,7 @@ LAB_comparefile:
     sbc #3
     sta filesys_l
     bcs :+
-    inc filesys_h
+    dec filesys_h
 : 
 
 	cpx #$FF
@@ -210,13 +211,13 @@ LAB_skip_end:
     jsr read_internal
 	STA	length_h			; save this file's payload length high byte
 
-	CLC					; clear carry for add
-	LDA	file_l			; get this file pointer low byte
-	ADC	#(f_name-f_start)-2		; add offset to the file name
-	STA	file_l			; save this file pointer low byte
-	BCC	nf_inc_h			; branch if no rollover
+	;CLC					; clear carry for add
+	;LDA	file_l			; get this file pointer low byte
+	;ADC	#(f_name-f_start)-2		; add offset to the file name
+	;STA	file_l			; save this file pointer low byte
+	;BCC	nf_inc_h			; branch if no rollover
 
-	INC	file_h			; else increment this file pointer high byte
+	;INC	file_h			; else increment this file pointer high byte
 nf_inc_h:
     ldy #$ff
 
@@ -225,25 +226,44 @@ nf_inc_h:
 ; in the name if the whole name matched.
 
 LAB_comparename:
+    lda filesys_l
+    clc
+    adc #4
+    sta filesys_l
+    bcc :+
+    inc filesys_h
+: 
+@cmp_loop:
     iny
-    ldx #<file_l
+    ldx #<filesys_l
     jsr read_internal
-    inc file_l
+    inc filesys_l
     bne :+
-    inc file_h
+    inc filesys_h
 :
     cmp #0
 	BEQ	LAB_cnameexit		; exit if end of name (match)
 
 	EOR	(findname_l),Y		; compare with next byte of name to find
-	BEQ	LAB_comparename		; loop if character match
+	BEQ	@cmp_loop		; loop if character match
 
 	;BNE	LAB_nextfile		; branch if not this file
     BEQ :+
+
+    lda filesys_l
+    and #$ff^$3f
+    sta filesys_l
+
     jmp LAB_nextfile
 :
 
 LAB_cnameexit:
+    pha
+    lda filesys_l
+    and #$ff^$3f
+    sta filesys_l
+    pla
+
 	LDA	(findname_l),Y		; get next byte of name to find
 	BEQ	LAB_end_find		; branch if end of name to find
 
@@ -269,13 +289,13 @@ LAB_end_find:
 	STA	file_l			; save as file system pointer low byte
     ldx #<file_l ; get cluster number
     jsr read_internal
-    sta file_cluster+0
+    sta filesys_cluster+0
     inc file_l
     ldx #<file_l ; get cluster number
     jsr read_internal
-    sta file_cluster+1
+    sta filesys_cluster+1
     sta file_h
-    lda file_cluster+0
+    lda filesys_cluster+0
     sta file_l
 
     ; thanks llvm-mos :szok:
