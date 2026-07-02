@@ -82,6 +82,7 @@ D_root:
     .res 64-(1+2+48+2), 0
 BD_root:
     write_dword D___bin-FS_header
+    write_dword 64
     write_dword 7235938 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -96,8 +97,8 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword D___dir2-FS_header
+    write_dword 64
     write_dword 846358884 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -112,8 +113,8 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword D___dir1-FS_header
+    write_dword 64
     write_dword 829581668 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -128,8 +129,8 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F_test___prog-FS_header
+    write_dword 0|(EF_test___prog-BF_test___prog)<<8
     write_dword 1953719668 ; file name chunk
     write_dword 1869770797 ; file name chunk
     write_dword 103 ; file name chunk
@@ -144,8 +145,8 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F_vertigo_sid-FS_header
+    write_dword 0|(EF_vertigo_sid-BF_vertigo_sid)<<8
     write_dword 1953654134 ; file name chunk
     write_dword 779052905 ; file name chunk
     write_dword 6580595 ; file name chunk
@@ -160,8 +161,8 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F_fork___bomb-FS_header
+    write_dword 0|(EF_fork___bomb-BF_fork___bomb)<<8
     write_dword 1802661734 ; file name chunk
     write_dword 1836016173 ; file name chunk
     write_dword 98 ; file name chunk
@@ -176,8 +177,8 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F_vertigo___remake_sid-FS_header
+    write_dword 0|(EF_vertigo___remake_sid-BF_vertigo___remake_sid)<<8
     write_dword 1953654134 ; file name chunk
     write_dword 762275689 ; file name chunk
     write_dword 1634559346 ; file name chunk
@@ -192,8 +193,8 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F_sid-FS_header
+    write_dword 0|(EF_sid-BF_sid)<<8
     write_dword 6580595 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -208,8 +209,8 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F_test_sh-FS_header
+    write_dword 0|(EF_test_sh-BF_test_sh)<<8
     write_dword 1953719668 ; file name chunk
     write_dword 6845230 ; file name chunk
     write_dword 0 ; file name chunk
@@ -224,14 +225,13 @@ BD_root:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F_robocop3___title_sid-FS_header
+    write_dword 0|(EF_robocop3___title_sid-BF_robocop3___title_sid)<<8
     write_dword 1868722034 ; file name chunk
     write_dword 863006563 ; file name chunk
     write_dword 1953068077 ; file name chunk
     write_dword 1932420460 ; file name chunk
     write_dword 25705 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -332,6 +332,7 @@ D___bin:
     .res 64-(1+2+48+2), 0
 BD___bin:
     write_dword F___bin__cat-FS_header
+    write_dword 0|(EF___bin__cat-BF___bin__cat)<<8
     write_dword 7627107 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -346,8 +347,8 @@ BD___bin:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___bin__echo-FS_header
+    write_dword 0|(EF___bin__echo-BF___bin__echo)<<8
     write_dword 1869112165 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -362,8 +363,8 @@ BD___bin:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___bin__pwd-FS_header
+    write_dword 0|(EF___bin__pwd-BF___bin__pwd)<<8
     write_dword 6584176 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -378,8 +379,8 @@ BD___bin:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___bin__printnl-FS_header
+    write_dword 0|(EF___bin__printnl-BF___bin__printnl)<<8
     write_dword 1852404336 ; file name chunk
     write_dword 7106164 ; file name chunk
     write_dword 0 ; file name chunk
@@ -394,8 +395,8 @@ BD___bin:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___bin__uname-FS_header
+    write_dword 0|(EF___bin__uname-BF___bin__uname)<<8
     write_dword 1835101813 ; file name chunk
     write_dword 101 ; file name chunk
     write_dword 0 ; file name chunk
@@ -410,8 +411,8 @@ BD___bin:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___bin__clear-FS_header
+    write_dword 0|(EF___bin__clear-BF___bin__clear)<<8
     write_dword 1634036835 ; file name chunk
     write_dword 114 ; file name chunk
     write_dword 0 ; file name chunk
@@ -426,8 +427,8 @@ BD___bin:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___bin__sh-FS_header
+    write_dword 0|(EF___bin__sh-BF___bin__sh)<<8
     write_dword 26739 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -442,10 +443,9 @@ BD___bin:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___bin__ls-FS_header
+    write_dword 0|(EF___bin__ls-BF___bin__ls)<<8
     write_dword 29548 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -561,6 +561,7 @@ D___dir2:
     .res 64-(1+2+48+2), 0
 BD___dir2:
     write_dword F___dir2__test___another_sh-FS_header
+    write_dword 0|(EF___dir2__test___another_sh-BF___dir2__test___another_sh)<<8
     write_dword 1953719668 ; file name chunk
     write_dword 1869504813 ; file name chunk
     write_dword 1919248500 ; file name chunk
@@ -575,11 +576,10 @@ BD___dir2:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___dir2__wao_bin-FS_header
+    write_dword 0|(EF___dir2__wao_bin-BF___dir2__wao_bin)<<8
     write_dword 779051383 ; file name chunk
     write_dword 7235938 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -628,6 +628,7 @@ D___dir1:
     .res 64-(1+2+48+2), 0
 BD___dir1:
     write_dword D___dir1__sub___dir-FS_header
+    write_dword 64
     write_dword 761427315 ; file name chunk
     write_dword 7498084 ; file name chunk
     write_dword 0 ; file name chunk
@@ -642,8 +643,8 @@ BD___dir1:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___dir1__test1_txt-FS_header
+    write_dword 0|(EF___dir1__test1_txt-BF___dir1__test1_txt)<<8
     write_dword 1953719668 ; file name chunk
     write_dword 2020879921 ; file name chunk
     write_dword 116 ; file name chunk
@@ -658,12 +659,11 @@ BD___dir1:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___dir1__test2_txt-FS_header
+    write_dword 0|(EF___dir1__test2_txt-BF___dir1__test2_txt)<<8
     write_dword 1953719668 ; file name chunk
     write_dword 2020879922 ; file name chunk
     write_dword 116 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -711,6 +711,7 @@ D___dir1__sub___dir:
     .res 64-(1+2+48+2), 0
 BD___dir1__sub___dir:
     write_dword D___dir1__sub___dir__fuck-FS_header
+    write_dword 64
     write_dword 1801680230 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -725,12 +726,11 @@ BD___dir1__sub___dir:
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword F___dir1__sub___dir__test3_txt-FS_header
+    write_dword 0|(EF___dir1__sub___dir__test3_txt-BF___dir1__sub___dir__test3_txt)<<8
     write_dword 1953719668 ; file name chunk
     write_dword 2020879923 ; file name chunk
     write_dword 116 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
@@ -767,10 +767,10 @@ D___dir1__sub___dir__fuck:
     .res 64-(1+2+48+2), 0
 BD___dir1__sub___dir__fuck:
     write_dword F___dir1__sub___dir__fuck__blehg_bin-FS_header
+    write_dword 0|(EF___dir1__sub___dir__fuck__blehg_bin-BF___dir1__sub___dir__fuck__blehg_bin)<<8
     write_dword 1751477346 ; file name chunk
     write_dword 1768042087 ; file name chunk
     write_dword 110 ; file name chunk
-    write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk
     write_dword 0 ; file name chunk

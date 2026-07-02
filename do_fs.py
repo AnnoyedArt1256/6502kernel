@@ -13,17 +13,22 @@ for root, dirs, files in os.walk(filedir):
         for i in dirs:
             if i == ".DS_Store": continue
             root_contents += f"    write_dword D___{i.replace(".","_").replace("-","___")}-FS_header\n"
+            file_info_val = 0x40 # dir
+            root_contents += f"    write_dword {file_info_val}\n"
             name_arr = list(i.encode("utf-8"))
-            name_arr = name_arr+[0]*(60-len(name_arr))
-            for x in range(0, 60, 4):
+            name_arr = name_arr+[0]*(56-len(name_arr))
+            for x in range(0, 56, 4):
                 val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
                 root_contents += f"    write_dword {val} ; file name chunk\n"
         for i in files:
             if i == ".DS_Store": continue
-            root_contents += f"    write_dword F_{i.replace(".","_").replace("-","___")}-FS_header\n"
+            j = f"F_{i.replace(".","_").replace("-","___")}"
+            root_contents += f"    write_dword {j}-FS_header\n"
+            file_info_val = 0x00 # file
+            root_contents += f"    write_dword {file_info_val}|(E{j}-B{j})<<8\n"
             name_arr = list(i.encode("utf-8"))
-            name_arr = name_arr+[0]*(60-len(name_arr))
-            for x in range(0, 60, 4):
+            name_arr = name_arr+[0]*(56-len(name_arr))
+            for x in range(0, 56, 4):
                 val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
                 root_contents += f"    write_dword {val} ; file name chunk\n"
         root_contents += f"    write_dword $ffffffff\n"
@@ -139,9 +144,11 @@ E{name}:
             j = "D_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
             contents += f"    write_dword {j}-FS_header\n"
+            file_info_val = 0x40 # dir
+            contents += f"    write_dword {file_info_val}\n"
             name_arr = list(i.encode("utf-8"))
-            name_arr = name_arr+[0]*(60-len(name_arr))
-            for x in range(0, 60, 4):
+            name_arr = name_arr+[0]*(56-len(name_arr))
+            for x in range(0, 56, 4):
                 val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
                 contents += f"    write_dword {val} ; file name chunk\n"
         for i in files:
@@ -149,9 +156,11 @@ E{name}:
             j = "F_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
             contents += f"    write_dword {j}-FS_header\n"
+            file_info_val = 0x00 # file
+            contents += f"    write_dword {file_info_val}|(E{j}-B{j})<<8\n"
             name_arr = list(i.encode("utf-8"))
-            name_arr = name_arr+[0]*(60-len(name_arr))
-            for x in range(0, 60, 4):
+            name_arr = name_arr+[0]*(56-len(name_arr))
+            for x in range(0, 56, 4):
                 val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
                 contents += f"    write_dword {val} ; file name chunk\n"
         contents += f"    write_dword $ffffffff\n"

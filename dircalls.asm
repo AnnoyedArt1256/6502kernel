@@ -83,10 +83,6 @@ readdir:
     sta readdir_temp_ptr+2
     lda temp_ptr2+1
     sta readdir_temp_ptr+3
-    lda temp_ptr3
-    sta readdir_temp_ptr+4
-    lda temp_ptr3+1
-    sta readdir_temp_ptr+5
 
     stx temp_ptr
     sty temp_ptr+1
@@ -108,63 +104,23 @@ readdir:
     lda (temp_ptr), y
     sta temp_ptr2+1
 
-.if 0
-    ldx #<temp_ptr2
-    jsr read_internal
-    inc temp_ptr2
-    bne :+
-    inc temp_ptr2+1
-:
-    sta readdir_temp_vars
-    sta temp_ptr3
-    ldx #<temp_ptr2
-    jsr read_internal
-    inc temp_ptr2
-    bne :+
-    inc temp_ptr2+1
-:
-    sta readdir_temp_vars+1
-    sta temp_ptr3+1
-    ldx #<temp_ptr2
-    jsr read_internal
-    inc temp_ptr2
-    bne :+
-    inc temp_ptr2+1
-:
-    sta readdir_temp_vars+2
-    ldx #<temp_ptr2
-    jsr read_internal
-    inc temp_ptr2
-    bne :+
-    inc temp_ptr2+1
-:
-.else
-    ldx #<temp_ptr2
-    jsr read_internal
-    inc temp_ptr2
-    bne :+
-    inc temp_ptr2+1
-:
-    sta temp_ptr3
-    ldx #<temp_ptr2
-    jsr read_internal
-    inc temp_ptr2
-    bne :+
-    inc temp_ptr2+1
-:
-    sta temp_ptr3+1
+    ; skip the offset bytes EXCEPT for the msb (since we use it for
+    ; checking the end of the file/dir entry offset list)
 
-    inc temp_ptr2
-    bne :+
+    lda temp_ptr2
+    clc
+    adc #3
+    sta temp_ptr2
+    bcc :+
     inc temp_ptr2+1
 :
+
     ldx #<temp_ptr2
     jsr read_internal
     inc temp_ptr2
     bne :+
     inc temp_ptr2+1
 :
-.endif
 
     cmp #$ff
     bne @skip_end
@@ -187,7 +143,7 @@ readdir:
     jmp @end_readdir
 @skip_end:
     
-    ldx #<temp_ptr3
+    ldx #<temp_ptr2
     jsr read_internal
     and #DIR_FLAG
     beq :+
@@ -195,6 +151,14 @@ readdir:
     lda (temp_ptr), y
     ora #DIRENT_ISDIR
     sta (temp_ptr), y
+:
+
+    lda temp_ptr2
+    clc
+    adc #4
+    sta temp_ptr2
+    bcc :+
+    inc temp_ptr2+1
 :
 
     ldy #128
@@ -242,10 +206,6 @@ readdir:
     sta temp_ptr2
     lda readdir_temp_ptr+3
     sta temp_ptr2+1
-    lda readdir_temp_ptr+4
-    sta temp_ptr3
-    lda readdir_temp_ptr+5
-    sta temp_ptr3+1
     plp
     rts
 
@@ -308,7 +268,7 @@ readdir_temp_vars:
 .endif
 
 readdir_temp_ptr:
-    .word 0, 0, 0
+    .word 0, 0
 
 ; returns: XY = dir str ptr
 get_curdir:

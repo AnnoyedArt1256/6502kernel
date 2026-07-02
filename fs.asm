@@ -191,23 +191,40 @@ LAB_comparefile:
 	bne LAB_skip_end
 	jmp LAB_exit_n_found
 LAB_skip_end:
-    ldx #<file_l
+
+    lda filesys_l
+    clc
+    adc #4 ; skip the file/dir offset
+    sta filesys_l
+    bcc :+
+    inc filesys_h
+: 
+
+    ldx #<filesys_l
     jsr read_internal
 	STA	fileflags			; save the file's flag byte
-    inc file_l
+    inc filesys_l
     bne :+
-    inc file_h
+    inc filesys_h
 :
-    ldx #<file_l
+    ldx #<filesys_l
     jsr read_internal
 	STA	length_l			; save this file's payload length low byte
-    inc file_l
+    inc filesys_l
     bne :+
-    inc file_h
+    inc filesys_h
 :
-    ldx #<file_l
+    ldx #<filesys_l
     jsr read_internal
 	STA	length_h			; save this file's payload length high byte
+
+    lda filesys_l
+    clc
+    adc #2 ; skip unused bytes
+    sta filesys_l
+    bcc :+
+    inc filesys_h
+: 
 
 	;CLC					; clear carry for add
 	;LDA	file_l			; get this file pointer low byte
@@ -224,13 +241,7 @@ nf_inc_h:
 ; in the name if the whole name matched.
 
 LAB_comparename:
-    lda filesys_l
-    clc
-    adc #4
-    sta filesys_l
-    bcc :+
-    inc filesys_h
-: 
+
 @cmp_loop:
     iny
     ldx #<filesys_l
