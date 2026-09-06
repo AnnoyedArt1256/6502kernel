@@ -22,7 +22,6 @@ lensys_h: .res 1
 
 file_l: .res 1
 file_h: .res 1
-file_cluster: .res 2
 
 length_l: .res 1
 length_h: .res 1
@@ -187,8 +186,9 @@ dad:
     asl
     asl
     asl
+    asl
     clc
-    adc #16-1
+    adc #32-1
     sta processes_sp, x
 
     lda #0
@@ -219,7 +219,7 @@ get_free_process:
     lda processes_exist, x
     beq :+
     inx
-    cpx #16
+    cpx #8
     bne :-
     lda #$ff
     rts
@@ -232,26 +232,12 @@ putnl:
     lda #$0a
     jmp putc
 
-hello:
-    ldx #0
-:
-    lda hello_text, x
-    beq :+
-    jsr_save putc
-    inx
-    bne :-
-:
-    rts
-
-hello_text:
-    .byte "Hello, World!", 10, 0
-
 zp_temp_inds_lo:
-    .repeat 16, I
+    .repeat 8, I
         .lobytes zp_temp+(64*I)
     .endrepeat
 zp_temp_inds_hi:
-    .repeat 16, I
+    .repeat 8, I
         .hibytes zp_temp+(64*I)
     .endrepeat
 
@@ -319,7 +305,7 @@ irq:
 @get_process:
     inc process_ind
     lda process_ind
-    cmp #16
+    cmp #8
     bcc :+
     lda #0
     sta process_ind
@@ -538,6 +524,7 @@ exit:
 ;   A = 0 if valid, otherwise error code
 ;   Y = new PID for exec program
 exec:
+    php
     sei
     sta @argc_cnt+1
     stx @argc_cntx+1
@@ -548,7 +535,7 @@ exec:
     beq :+
 @fail_ret:
     ; return with error 1
-    cli
+    plp
     rts
 :
 
@@ -593,7 +580,7 @@ exec:
 
 @end_exec:
     lda #0
-    cli
+    plp
     rts
 
 check_pid_exist:
@@ -604,31 +591,31 @@ align 256
 
 processes:
 processes_pc:
-    .res 16*2, 0
+    .res 8*2, 0
 processes_exist:
-    .res 16, 0
+    .res 8, 0
 processes_a:
-    .res 16, 0
+    .res 8, 0
 processes_x:
-    .res 16, 0
+    .res 8, 0
 processes_y:
-    .res 16, 0
+    .res 8, 0
 processes_f:
-    .res 16, 0
+    .res 8, 0
 processes_sp:
-    .res 16, 0
+    .res 8, 0
 processes_zplen:
-    .res 16, 64
+    .res 8, 64
 processes_memstart_TEXT:
-    .res 16, 0
+    .res 8, 0
 processes_memend_TEXT:
-    .res 16, 0
+    .res 8, 0
 processes_memstart_DATA:
-    .res 16, 0
+    .res 8, 0
 processes_memend_DATA:
-    .res 16, 0
+    .res 8, 0
 processes_fork:
-    .res 16, 0
+    .res 8, 0
 
 init_calls:
     lda #$60
@@ -715,8 +702,9 @@ gettick:
     asl
     asl
     asl
+    asl
     clc
-    adc #16-1
+    adc #32-1
     sta processes_sp, x
 
     lda processes_memstart_TEXT, y
@@ -804,7 +792,7 @@ get_free_process:
     lda processes_exist, x
     beq :+
     inx
-    cpx #16
+    cpx #8
     bne :-
     lda #$ff
     rts
@@ -845,16 +833,15 @@ all_calls:
     .word malloc_range
     .word exit_nmi
     .word readdir
-    .word mkdir
-    .word unlink
+    .word uname
 all_calls_end:
 
 name_temp_addrs_lo:
-    .repeat 16, I
+    .repeat 8, I
         .lobytes name_temp+(64*I)
     .endrepeat
 name_temp_addrs_hi:
-    .repeat 16, I
+    .repeat 8, I
         .hibytes name_temp+(64*I)
     .endrepeat
 
@@ -872,10 +859,15 @@ welcome_string:
 uname_str:
     .byte "6502kernel", 0
 
+uname:
+    ldx #<uname_str
+    ldy #>uname_str
+    rts
+
 align 256
-zp_temp: .res 64*16, 0
+zp_temp: .res 64*8, 0
 name_temp: 
-    .repeat 16
+    .repeat 8
         .byte "/"
         .res 64-1, 0
     .endrepeat

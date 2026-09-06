@@ -11,14 +11,31 @@ for root, dirs, files in os.walk(filedir):
     if root == filedir:
         root_contents = ""
         for i in dirs:
+            if i == ".DS_Store": continue
             root_contents += f"    write_dword D___{i.replace(".","_").replace("-","___")}-FS_header\n"
+            file_info_val = 0x40 # dir
+            root_contents += f"    write_dword {file_info_val}\n"
+            name_arr = list(i.encode("utf-8"))
+            name_arr = name_arr+[0]*(56-len(name_arr))
+            for x in range(0, 56, 4):
+                val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
+                root_contents += f"    write_dword {val} ; file name chunk\n"
         for i in files:
-            root_contents += f"    write_dword F_{i.replace(".","_").replace("-","___")}-FS_header\n"
+            if i == ".DS_Store": continue
+            j = f"F_{i.replace(".","_").replace("-","___")}"
+            root_contents += f"    write_dword {j}-FS_header\n"
+            file_info_val = 0x00 # file
+            root_contents += f"    write_dword {file_info_val}|(E{j}-B{j})<<8\n"
+            name_arr = list(i.encode("utf-8"))
+            name_arr = name_arr+[0]*(56-len(name_arr))
+            for x in range(0, 56, 4):
+                val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
+                root_contents += f"    write_dword {val} ; file name chunk\n"
         root_contents += f"    write_dword $ffffffff\n"
         root_contents += f"    pad_end 64\n"
         text += f"""
 ; filesystem written automatically
-; DO NOT MODIFY MANUALLY UNLESS YOU ARE EXPERIENCED!!!
+; DO NOT MODIFY MANUALLY!!!
 
 .macro GET_CUR_CLUSTER
     .word (*-FS_begin)>>6
@@ -44,7 +61,7 @@ for root, dirs, files in os.walk(filedir):
     ; write_dword while writing the FAT over cluster boundaries
     prev_cur_cluster .set (*-FS_begin)>>6
     prev_cur_cluster_lsb .set (*-FS_begin)&$3f
-        .dword value
+    .dword value
     cur_cluster .set (*-FS_begin)>>6
     .if cur_cluster <> prev_cur_cluster
         .ident(.sprintf("FS_cluser_%d",prev_cur_cluster)) .set cur_cluster
@@ -103,14 +120,14 @@ BD_root:
 ED_root:
         """
         for i in files:
+            if i == ".DS_Store": continue
             name = f"F_{i.replace(".","_").replace("-","___")}"
             filename = os.path.join(root,i)
             text += f"""
 {name}:
     .byte 0
     .word E{name}-B{name}
-    .byte \"{i}\"
-    .res 48-{len(i)}, 0
+    .res 48, 0
     GET_CUR_CLUSTER_ADD 1
     WRITE_CLUSTER
     .res 64-(1+2+48+2), 0
@@ -123,13 +140,29 @@ E{name}:
         root_name = root[len(filedir):]
         contents = ""
         for i in dirs:
+            if i == ".DS_Store": continue
             j = "D_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
             contents += f"    write_dword {j}-FS_header\n"
+            file_info_val = 0x40 # dir
+            contents += f"    write_dword {file_info_val}\n"
+            name_arr = list(i.encode("utf-8"))
+            name_arr = name_arr+[0]*(56-len(name_arr))
+            for x in range(0, 56, 4):
+                val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
+                contents += f"    write_dword {val} ; file name chunk\n"
         for i in files:
+            if i == ".DS_Store": continue
             j = "F_"+root_name+"/"+(i.replace(".","_"))
             j = j.replace("/","__").replace("-","___")
             contents += f"    write_dword {j}-FS_header\n"
+            file_info_val = 0x00 # file
+            contents += f"    write_dword {file_info_val}|(E{j}-B{j})<<8\n"
+            name_arr = list(i.encode("utf-8"))
+            name_arr = name_arr+[0]*(56-len(name_arr))
+            for x in range(0, 56, 4):
+                val = name_arr[x|0]|(name_arr[x|1]<<8)|(name_arr[x|2]<<16)|(name_arr[x|3]<<24)
+                contents += f"    write_dword {val} ; file name chunk\n"
         contents += f"    write_dword $ffffffff\n"
         contents += f"    pad_end 64\n"
         name = "D_"+root_name
@@ -138,8 +171,7 @@ E{name}:
 {name}:
     .byte DIR_FLAG
     .word 0
-    .byte \"{Path(root_name).stem}\"
-    .res 48-{len(Path(root_name).stem)}, 0
+    .res 48, 0
     GET_CUR_CLUSTER_ADD 1
     WRITE_CLUSTER
     .res 64-(1+2+48+2), 0
@@ -148,6 +180,7 @@ B{name}:
 E{name}:
         """
         for i in files:
+            if i == ".DS_Store": continue
             name = "F_"+root_name+"/"+(i.replace(".","_").replace("-","___"))
             name = name.replace("/","__").replace("-","___")
             filename = os.path.join(root,i)
@@ -155,8 +188,7 @@ E{name}:
 {name}:
     .byte 0
     .word E{name}-B{name}
-    .byte \"{i}\"
-    .res 48-{len(i)}, 0
+    .res 48, 0
     GET_CUR_CLUSTER_ADD 1
     WRITE_CLUSTER
     .res 64-(1+2+48+2), 0
